@@ -1,0 +1,59 @@
+.idea
+.ipynb_checkpoints
+.mypy_cache
+.vscode
+__pycache__
+.pytest_cache
+htmlcov
+dist
+site
+.coverage*
+coverage.xml
+.netlify
+test.db
+log.txt
+Pipfile.lock
+env3.*
+env
+docs_build
+site_build
+venv
+docs.zip
+archive.zip
+
+# vim temporary files
+*~
+.*.sw?
+.cache
+
+# macOS
+.DS_Store
+# Added for this project
+# Node.js / JavaScript
+node_modules/
+Dist/
+build/
+# Python virtual environments
+env/
+venv/
+.venv/
+ENV/
+# Logs and temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# OS generated files
+Thumbs.db
+# IDE / Editor folders
+.idea/
+.vscode/
+# Environment files (do not commit)
+client/.env
+*.env
+*.env.*
+# Allow the safe example template (no secrets) to be committed
+!client/.env.example
+# Coverage and build artifacts
+coverage/
+*.tsbuildinfo
