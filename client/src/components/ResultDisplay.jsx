@@ -20,16 +20,8 @@ function Result({
     const sendRequest = async () => {
       if (!csv) return;
 
-      // Resolve the backend base URL from the Vite environment variable.
-      // Set VITE_API_URL in client/.env (copy from client/.env.example).
-      const apiBase = import.meta.env.VITE_API_URL;
-      if (!apiBase) {
-        setError(
-          'VITE_API_URL is not set. Create client/.env from client/.env.example and restart the dev server.'
-        );
-        setLoading(false);
-        return;
-      }
+      // Resolve the backend base URL from the Vite environment variable with local fallback.
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
       const formData = new FormData();
       formData.append('file', csv);

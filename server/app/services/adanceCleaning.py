@@ -286,7 +286,7 @@ class AdvancedDataCleaner:
             return
             
         if method == 'onehot':
-            encoder = OneHotEncoder(sparse=False, drop='first')
+            encoder = OneHotEncoder(sparse_output=False, drop='first')
             encoded = encoder.fit_transform(self.df[cols])
             encoded_cols = encoder.get_feature_names_out(cols)
             encoded_df = pd.DataFrame(encoded, columns=encoded_cols)

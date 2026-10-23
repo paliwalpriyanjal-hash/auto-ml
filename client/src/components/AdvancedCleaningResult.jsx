@@ -20,8 +20,10 @@ export default function AdvancedCleaningResult({ csvFile }) {
       const formData = new FormData();
       formData.append('file', csvFile);
 
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
       try {
-        const response = await fetch('http://localhost:8000/clean', {
+        const response = await fetch(`${apiBase}/api/clean`, {
           method: 'POST',
           body: formData,
         });
@@ -30,9 +32,9 @@ export default function AdvancedCleaningResult({ csvFile }) {
           throw new Error(`Server responded with ${response.status}`);
         }
 
-        // Expecting raw CSV text in response
-        const text = await response.text();
-        setCleanedCSV(text);
+        // Parse JSON response which contains { csv: string, stats: object }
+        const data = await response.json();
+        setCleanedCSV(data.csv || '');
       } catch (err) {
         console.error(err);
         setError('Failed to clean CSV. Please try again.');

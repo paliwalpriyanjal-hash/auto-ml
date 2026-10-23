@@ -94,11 +94,14 @@ export default function AutoMLStudio() {
                     case 'text':
                     default:         mappedType = 'string';   break;
                 }
-                // Mark free-text columns: 'text' type with high unique-value ratio
+                // Mark free-text columns: 'text' type with multiple words or very high cardinality
                 const colInfo = stats?.columns[header];
-                const isText = analysedType === 'text' &&
-                               colInfo != null &&
-                               colInfo.uniquePercentage > 50;
+                const sampleValues = colInfo?.sampleValues || [];
+                const hasMultiWordText = sampleValues.some(v => typeof v === 'string' && v.trim().includes(' '));
+                const isText = analysedType === 'text' && (
+                    hasMultiWordText ||
+                    (colInfo != null && colInfo.uniqueCount > 20 && colInfo.uniquePercentage > 70)
+                );
                 return { name: header, type: mappedType, isText };
             });
 
@@ -376,27 +379,33 @@ export default function AutoMLStudio() {
                         <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
                             <thead className="bg-gray-100">
                                 <tr>
-                                    {columns.map((col) => (
-                                        <th
-                                            key={col}
-                                            className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
-                                        >
-                                            {col}
-                                        </th>
-                                    ))}
+                                    {columns.map((col) => {
+                                        const colName = typeof col === 'object' ? col.name : col;
+                                        return (
+                                            <th
+                                                key={colName}
+                                                className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                                            >
+                                                {colName}
+                                            </th>
+                                        );
+                                    })}
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {previewData.map((row, idx) => (
                                     <tr key={idx}>
-                                        {columns.map((col) => (
-                                            <td
-                                                key={`${idx}-${col}`}
-                                                className="px-4 py-3 whitespace-nowrap text-sm text-gray-700"
-                                            >
-                                                {row[col] || <span className="text-gray-400 italic">empty</span>}
-                                            </td>
-                                        ))}
+                                        {columns.map((col) => {
+                                            const colName = typeof col === 'object' ? col.name : col;
+                                            return (
+                                                <td
+                                                    key={`${idx}-${colName}`}
+                                                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-700"
+                                                >
+                                                    {row[colName] || <span className="text-gray-400 italic">empty</span>}
+                                                </td>
+                                            );
+                                        })}
                                     </tr>
                                 ))}
                             </tbody>

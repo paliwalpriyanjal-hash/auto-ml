@@ -16,16 +16,8 @@ export default function AdvancedResult({ csv, preprocessing = null, columns = []
       setCleanedCSV('');
       setStats(null);
 
-      // Resolve the backend base URL from the Vite environment variable.
-      // Set VITE_API_URL in client/.env (copy from client/.env.example).
-      const apiBase = import.meta.env.VITE_API_URL;
-      if (!apiBase) {
-        setError(
-          'VITE_API_URL is not set. Create client/.env from client/.env.example and restart the dev server.'
-        );
-        setLoading(false);
-        return;
-      }
+      // Resolve the backend base URL from the Vite environment variable with local fallback.
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
       try {
         const formData = new FormData();
@@ -33,9 +25,11 @@ export default function AdvancedResult({ csv, preprocessing = null, columns = []
         
         // Send preprocessing options as JSON if they exist
         if (preprocessing) {
+          // Extract column names if columns array contains objects
+          const availableCols = columns.map(c => (typeof c === 'object' && c !== null ? c.name : c));
           formData.append('preprocessing', JSON.stringify({
             ...preprocessing,
-            available_columns: columns // Send available columns for validation
+            available_columns: availableCols // Send string names for backend validation
           }));
         }
         for (let [key, value] of formData.entries()) {

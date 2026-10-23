@@ -23,9 +23,10 @@ async def train(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/clean")
+@router.post("/clean")
 async def clean_data(
     file: UploadFile = File(...),
-    preprocessing: str = Form(...)
+    preprocessing: str = Form("{}")
 ):
     try:
         # Parse preprocessing JSON
