@@ -5,6 +5,8 @@ import Dashboard2 from './Dashboard2';
 
 function Result({
   csv,
+  taskType = 'regression',
+  targetColumn = '',
   model,
   scaler,
   splitRatio,
@@ -30,6 +32,10 @@ function Result({
       formData.append('scaler', scaler);
       formData.append('model', model);
       formData.append('splitRatio', splitRatio);
+      formData.append('task_type', taskType);
+      if (taskType === 'classification' && targetColumn) {
+        formData.append('target_column', targetColumn);
+      }
 
       try {
         const res = await fetch(`${apiBase}/train`, {
@@ -37,7 +43,16 @@ function Result({
           body: formData,
         });
 
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        if (!res.ok) {
+          let errDetail = `HTTP error! Status: ${res.status}`;
+          try {
+            const errData = await res.json();
+            if (errData?.detail) {
+              errDetail = errData.detail;
+            }
+          } catch (_) {}
+          throw new Error(errDetail);
+        }
         const data = await res.json();
         setResponse(data);
       } catch (err) {
@@ -48,7 +63,7 @@ function Result({
     };
 
     sendRequest();
-  }, [csv, model, scaler, splitRatio, missing, encoding]);
+  }, [csv, taskType, targetColumn, model, scaler, splitRatio, missing, encoding]);
 
   const handleTryAnother = () => {
     if (onReset) {
@@ -137,55 +152,204 @@ function Result({
         </h3>
 
         {metrics ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-              <h4 className="text-sm font-medium text-blue-800 mb-1">Root Mean Squared Error</h4>
-              <p className="text-2xl font-bold text-blue-600">
-                {metrics.rmse?.toFixed(4) || 'N/A'}
-              </p>
-              <p className="text-xs text-blue-700 mt-1">Lower is better</p>
-            </div>
+          response.task_type === 'classification' ? (
+            <div className="space-y-6">
+              {/* Classification Metrics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <h4 className="text-sm font-medium text-blue-800 mb-1">Accuracy</h4>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {metrics.accuracy !== null && metrics.accuracy !== undefined
+                      ? (metrics.accuracy * 100).toFixed(2) + '%'
+                      : 'N/A'}
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">Overall correct predictions</p>
+                </div>
 
-            <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-              <h4 className="text-sm font-medium text-green-800 mb-1">R² Score</h4>
-              <p className="text-2xl font-bold text-green-600">
-                {metrics.r2?.toFixed(4) || 'N/A'}
-              </p>
-              <p className="text-xs text-green-700 mt-1">Closer to 1 is better</p>
-            </div>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                  <h4 className="text-sm font-medium text-green-800 mb-1">Balanced Accuracy</h4>
+                  <p className="text-2xl font-bold text-green-600">
+                    {metrics.balanced_accuracy !== null && metrics.balanced_accuracy !== undefined
+                      ? (metrics.balanced_accuracy * 100).toFixed(2) + '%'
+                      : 'N/A'}
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">Balanced across class frequencies</p>
+                </div>
 
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-              <h4 className="text-sm font-medium text-purple-800 mb-1">Mean Absolute Error</h4>
-              <p className="text-2xl font-bold text-purple-600">
-                {metrics.mae?.toFixed(4) || 'N/A'}
-              </p>
-              <p className="text-xs text-purple-700 mt-1">Lower is better</p>
-            </div>
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                  <h4 className="text-sm font-medium text-purple-800 mb-1">F1 Score (Macro)</h4>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {metrics.f1_macro !== null && metrics.f1_macro !== undefined
+                      ? metrics.f1_macro.toFixed(4)
+                      : 'N/A'}
+                  </p>
+                  <p className="text-xs text-purple-700 mt-1">Unweighted harmonic mean</p>
+                </div>
 
-            <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
-              <h4 className="text-sm font-medium text-amber-800 mb-1">Explained Variance</h4>
-              <p className="text-2xl font-bold text-amber-600">
-                {metrics.explained_variance?.toFixed(4) || 'N/A'}
-              </p>
-              <p className="text-xs text-amber-700 mt-1">Closer to 1 is better</p>
-            </div>
+                <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                  <h4 className="text-sm font-medium text-indigo-800 mb-1">F1 Score (Weighted)</h4>
+                  <p className="text-2xl font-bold text-indigo-600">
+                    {metrics.f1_weighted !== null && metrics.f1_weighted !== undefined
+                      ? metrics.f1_weighted.toFixed(4)
+                      : 'N/A'}
+                  </p>
+                  <p className="text-xs text-indigo-700 mt-1">Support-weighted harmonic mean</p>
+                </div>
 
-            <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-              <h4 className="text-sm font-medium text-red-800 mb-1">Max Error</h4>
-              <p className="text-2xl font-bold text-red-600">
-                {metrics.max_error?.toFixed(4) || 'N/A'}
-              </p>
-              <p className="text-xs text-red-700 mt-1">Largest error</p>
-            </div>
+                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                  <h4 className="text-sm font-medium text-emerald-800 mb-1">Precision / Recall (Macro)</h4>
+                  <p className="text-xl font-bold text-emerald-600">
+                    {metrics.precision_macro !== null && metrics.precision_macro !== undefined
+                      ? (metrics.precision_macro * 100).toFixed(1) + '%'
+                      : 'N/A'}{' '}
+                    /{' '}
+                    {metrics.recall_macro !== null && metrics.recall_macro !== undefined
+                      ? (metrics.recall_macro * 100).toFixed(1) + '%'
+                      : 'N/A'}
+                  </p>
+                  <p className="text-xs text-emerald-700 mt-1">Precision / Recall macro-averaged</p>
+                </div>
 
-            <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-              <h4 className="text-sm font-medium text-indigo-800 mb-1">Mean Absolute % Error</h4>
-              <p className="text-2xl font-bold text-indigo-600">
-                {metrics.mape ? (metrics.mape * 100).toFixed(2) + '%' : 'N/A'}
-              </p>
-              <p className="text-xs text-indigo-700 mt-1">Percentage error</p>
+                {metrics.roc_auc !== null && metrics.roc_auc !== undefined && (
+                  <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                    <h4 className="text-sm font-medium text-amber-800 mb-1">ROC-AUC</h4>
+                    <p className="text-2xl font-bold text-amber-600">
+                      {metrics.roc_auc.toFixed(4)}
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">Area under ROC curve</p>
+                  </div>
+                )}
+
+                {metrics.log_loss !== null && metrics.log_loss !== undefined && (
+                  <div className="bg-rose-50 p-4 rounded-lg border border-rose-100">
+                    <h4 className="text-sm font-medium text-rose-800 mb-1">Log Loss</h4>
+                    <p className="text-2xl font-bold text-rose-600">
+                      {metrics.log_loss.toFixed(4)}
+                    </p>
+                    <p className="text-xs text-rose-700 mt-1">Cross-entropy loss (lower is better)</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Confusion Matrix Display */}
+              {response.confusion_matrix && (
+                <div className="mt-6 bg-gray-50 p-5 rounded-xl border border-gray-200">
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                    Confusion Matrix
+                  </h4>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Rows represent True Class, Columns represent Predicted Class.
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 border border-gray-200 text-center">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
+                            True \ Pred
+                          </th>
+                          {response.confusion_matrix.labels.map((lbl) => (
+                            <th
+                              key={lbl}
+                              className="px-3 py-2 text-xs font-semibold text-gray-700 uppercase"
+                            >
+                              {lbl}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {response.confusion_matrix.matrix.map((row, rowIdx) => (
+                          <tr key={rowIdx}>
+                            <td className="px-3 py-2 text-xs font-bold text-gray-700 bg-gray-50">
+                              {response.confusion_matrix.labels[rowIdx]}
+                            </td>
+                            {row.map((cell, colIdx) => (
+                              <td
+                                key={colIdx}
+                                className={`px-4 py-2 text-sm font-medium ${
+                                  rowIdx === colIdx
+                                    ? 'bg-green-50 text-green-700 font-bold'
+                                    : cell > 0
+                                    ? 'bg-red-50 text-red-600'
+                                    : 'text-gray-500'
+                                }`}
+                              >
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Warnings / Diagnostic notices if any */}
+              {response.warnings && response.warnings.length > 0 && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
+                  <h4 className="text-xs font-bold text-yellow-800 uppercase tracking-wider mb-1">
+                    Evaluation Diagnostics
+                  </h4>
+                  <ul className="list-disc list-inside text-xs text-yellow-700 space-y-1">
+                    {response.warnings.map((w, idx) => (
+                      <li key={idx}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <h4 className="text-sm font-medium text-blue-800 mb-1">Root Mean Squared Error</h4>
+                <p className="text-2xl font-bold text-blue-600">
+                  {metrics.rmse?.toFixed(4) || 'N/A'}
+                </p>
+                <p className="text-xs text-blue-700 mt-1">Lower is better</p>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                <h4 className="text-sm font-medium text-green-800 mb-1">R² Score</h4>
+                <p className="text-2xl font-bold text-green-600">
+                  {metrics.r2?.toFixed(4) || 'N/A'}
+                </p>
+                <p className="text-xs text-green-700 mt-1">Closer to 1 is better</p>
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <h4 className="text-sm font-medium text-purple-800 mb-1">Mean Absolute Error</h4>
+                <p className="text-2xl font-bold text-purple-600">
+                  {metrics.mae?.toFixed(4) || 'N/A'}
+                </p>
+                <p className="text-xs text-purple-700 mt-1">Lower is better</p>
+              </div>
+
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                <h4 className="text-sm font-medium text-amber-800 mb-1">Explained Variance</h4>
+                <p className="text-2xl font-bold text-amber-600">
+                  {metrics.explained_variance?.toFixed(4) || 'N/A'}
+                </p>
+                <p className="text-xs text-amber-700 mt-1">Closer to 1 is better</p>
+              </div>
+
+              <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                <h4 className="text-sm font-medium text-red-800 mb-1">Max Error</h4>
+                <p className="text-2xl font-bold text-red-600">
+                  {metrics.max_error?.toFixed(4) || 'N/A'}
+                </p>
+                <p className="text-xs text-red-700 mt-1">Largest error</p>
+              </div>
+
+              <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                <h4 className="text-sm font-medium text-indigo-800 mb-1">Mean Absolute % Error</h4>
+                <p className="text-2xl font-bold text-indigo-600">
+                  {metrics.mape ? (metrics.mape * 100).toFixed(2) + '%' : 'N/A'}
+                </p>
+                <p className="text-xs text-indigo-700 mt-1">Percentage error</p>
+              </div>
+            </div>
+          )
         ) : (
           <p className="text-gray-500">No performance metrics available.</p>
         )}

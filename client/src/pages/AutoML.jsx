@@ -18,6 +18,10 @@ function AutoML() {
   const [columns, setColumns] = useState([]);
   const [activeStep, setActiveStep] = useState(1);
 
+  // Task & Target selection
+  const [taskType, setTaskType] = useState("regression");
+  const [targetColumn, setTargetColumn] = useState("");
+
   const [missingStrategy, setMissingStrategy] = useState("drop");
   const [encodingStrategy, setEncodingStrategy] = useState("label");
   const [scaler, setScaler] = useState("standard");
@@ -27,6 +31,17 @@ function AutoML() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState(null);
+
+  const handleTaskTypeChange = (newTask) => {
+    setTaskType(newTask);
+    if (newTask === "classification") {
+      setModel("RandomForestClassifier");
+      setEncodingStrategy("onehot");
+    } else {
+      setModel("LinearRegression");
+      setEncodingStrategy("label");
+    }
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -40,8 +55,12 @@ function AutoML() {
           skipEmptyLines: true,
           complete: (results) => {
             const data = results.data;
-            setColumns(results.meta.fields || []);
+            const fields = results.meta.fields || [];
+            setColumns(fields);
             setPreviewData(data.slice(0, 5));
+            if (fields.length > 0) {
+              setTargetColumn(fields[fields.length - 1]);
+            }
           },
         });
       };
@@ -50,6 +69,10 @@ function AutoML() {
   };
 
   const handleSubmit = () => {
+    if (taskType === "classification" && !targetColumn) {
+      setError("Please select a target column for classification.");
+      return;
+    }
     setLoading(true);
     setError("");
     setActiveStep(4);
@@ -62,6 +85,8 @@ function AutoML() {
     setCsvFile(null);
     setPreviewData([]);
     setColumns([]);
+    setTaskType("regression");
+    setTargetColumn("");
     setMissingStrategy("drop");
     setEncodingStrategy("label");
     setScaler("standard");
@@ -199,6 +224,75 @@ function AutoML() {
       {/* Step 3: Configuration */}
       {activeStep === 3 && (
         <div className="space-y-6">
+          {/* Task Type and Target Column Selector */}
+          <section className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <FiSettings className="text-yellow-600 mr-2" /> Task & Target Configuration
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Task Type Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Machine Learning Task
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleTaskTypeChange("regression")}
+                    className={`py-3 px-4 rounded-lg border text-sm font-semibold transition duration-150 ${
+                      taskType === "regression"
+                        ? "bg-yellow-600 text-white border-yellow-600 shadow-md"
+                        : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
+                    }`}
+                  >
+                    Regression
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTaskTypeChange("classification")}
+                    className={`py-3 px-4 rounded-lg border text-sm font-semibold transition duration-150 ${
+                      taskType === "classification"
+                        ? "bg-yellow-600 text-white border-yellow-600 shadow-md"
+                        : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
+                    }`}
+                  >
+                    Classification
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {taskType === "regression"
+                    ? "Predict continuous numerical values (e.g. prices, scores, temperatures)."
+                    : "Predict discrete categorical classes (e.g. churn yes/no, disease type)."}
+                </p>
+              </div>
+
+              {/* Target Column Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Target Column {taskType === "classification" && <span className="text-red-500 font-bold">*</span>}
+                </label>
+                <select
+                  value={targetColumn}
+                  onChange={(e) => setTargetColumn(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 bg-white"
+                >
+                  <option value="">-- Select Target Column --</option>
+                  {columns.map((col) => (
+                    <option key={col} value={col}>
+                      {col}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  {taskType === "classification"
+                    ? "Required for classification. The selected column will be predicted from the remaining features."
+                    : "Optional for regression (defaults to last column if not specified)."}
+                </p>
+              </div>
+            </div>
+          </section>
+
           <Preprocess
             missingStrategy={missingStrategy}
             setMissingStrategy={setMissingStrategy}
@@ -210,7 +304,7 @@ function AutoML() {
             setSplitRatio={setSplitRatio}
           />
 
-          <Model model={model} setModel={setModel} />
+          <Model model={model} setModel={setModel} taskType={taskType} />
 
           <div className="text-center mt-8">
             <button
@@ -257,6 +351,8 @@ function AutoML() {
       {submit && (
         <Result
           csv={csvFile}
+          taskType={taskType}
+          targetColumn={targetColumn}
           model={model}
           scaler={scaler}
           splitRatio={splitRatio}

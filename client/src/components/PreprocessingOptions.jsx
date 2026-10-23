@@ -35,7 +35,7 @@ const PreprocessingOptions = ({
         >
           <option value="drop">Drop Rows</option>
           <option value="mean">Fill with Mean</option>
-          {/* Removed 'median' and 'mode' to match original backend */}
+          <option value="median">Fill with Median</option>
         </select>
       </div>
 
