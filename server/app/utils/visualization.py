@@ -1,5 +1,7 @@
 import io
 import base64
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 def get_visualization_plot(model, columns, model_name: str) -> str:
