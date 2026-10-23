@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 from app.services.train_service import train_model_service
 from app.services.classification_service import train_classification_service
+from app.services.comparison_service import compare_models_service
 from app.services.adanceCleaning import AdvancedDataCleaner
 import json
 
@@ -68,6 +69,34 @@ async def clean_data(
         raise HTTPException(status_code=400, detail="Invalid preprocessing JSON")
     except HTTPException as he:
         raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/compare")
+async def compare(
+    file: UploadFile = File(...),
+    task_type: str = Form(...),
+    target_column: str = Form(...),
+    scaler: str = Form("standard"),
+    splitRatio: float = Form(0.8),
+    missing: str = Form("median"),
+    encoding: str = Form("onehot"),
+    ranking_metric: Optional[str] = Form(None)
+):
+    try:
+        result = await compare_models_service(
+            file=file,
+            task_type=task_type,
+            target_column=target_column,
+            scaler=scaler,
+            split_ratio=splitRatio,
+            missing=missing,
+            encoding=encoding,
+            ranking_metric=ranking_metric,
+        )
+        return JSONResponse(content=result)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
