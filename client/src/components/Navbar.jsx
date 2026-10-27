@@ -44,7 +44,13 @@ const Navbar = () => {
           Technology
         </Link>
       </div>
-      <div>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate("/compare")}
+          className="px-4 py-2 rounded-md border border-yellow-600 text-yellow-600 hover:bg-yellow-50 transition-colors font-medium"
+        >
+          Compare Models
+        </button>
         <button
           onClick={() => navigate("/automl")}
           className="px-4 py-2 rounded-md bg-gradient-to-r from-yellow-600 to-gray-600 hover:from-orange-600 hover:to-gray-600 text-white transition-colors"

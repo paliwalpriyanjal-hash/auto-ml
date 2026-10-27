@@ -5,6 +5,8 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AdvancedCleaning from './pages/AdvanceCleaning';
 
+import CompareModels from './pages/CompareModels';
+
 function App() {
   return (
     <Router>
@@ -13,6 +15,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/automl" element={<AutoML />} />
         <Route path="/clean" element={<AdvancedCleaning />} />
+        <Route path="/compare" element={<CompareModels />} />
       </Routes>
       <Footer/>
     </Router>
