@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: autoveyra-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTOVEYRA_ENV=production
+      - AUTOVEYRA_AUTH_ENABLED=true
+      - AUTOVEYRA_MAX_UPLOAD_BYTES=26214400
+      - AUTOVEYRA_MAX_DATASET_ROWS=100000
+      - AUTOVEYRA_MAX_DATASET_COLS=500
+      - AUTOVEYRA_MAX_PREDICTION_ROWS=5000
+      - AUTOVEYRA_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+    volumes:
+      - autoveyra_data:/app/server/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  autoveyra_data:
+    name: autoveyra_persistent_storage

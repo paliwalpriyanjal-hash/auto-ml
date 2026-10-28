@@ -14,6 +14,7 @@ from fastapi import UploadFile, HTTPException
 from collections import defaultdict
 import traceback
 
+from app.utils.security import safe_read_csv
 from app.utils.visualization import get_visualization_plot, get_prediction_plot
 from app.utils.preprocessing import (
     drop_constant, drop_high_cardinality, handle_missing,
@@ -33,11 +34,7 @@ async def train_model_service(
         if not file.filename.endswith('.csv'):
             raise HTTPException(status_code=400, detail="Only CSV files are supported")
 
-        contents = await file.read()
-        df = pd.read_csv(io.BytesIO(contents))
-        
-        if df.empty:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        df = await safe_read_csv(file)
 
         # Track preprocessing steps
         preprocessing_stats = defaultdict(dict)

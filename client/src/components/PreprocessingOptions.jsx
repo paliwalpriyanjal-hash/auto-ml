@@ -1,99 +1,103 @@
-import React from 'react';
-import { FiSettings, FiHelpCircle } from 'react-icons/fi';
+import React from "react";
+import { FiSettings, FiHelpCircle } from "react-icons/fi";
 
 const PreprocessingOptions = ({
-  missingStrategy = 'drop', 
+  missingStrategy = "drop",
   setMissingStrategy,
-  encodingStrategy = 'label', 
+  encodingStrategy = "label",
   setEncodingStrategy,
-  scaler = 'standard', 
+  scaler = "standard",
   setScaler,
-  splitRatio = '0.8', 
-  setSplitRatio
+  splitRatio = "0.8",
+  setSplitRatio,
 }) => (
-  <section className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 mb-6">
-    <div className="flex items-center mb-4">
-      <div className="bg-gray-100 p-2 rounded-lg mr-3">
-        <FiSettings className="text-yellow-600" size={20} />
+  <section className="bg-[#111126] p-6 rounded-2xl border border-white/[0.08] shadow-xl mb-6">
+    <div className="flex items-center mb-5 border-b border-white/[0.06] pb-3">
+      <div className="bg-[#8265FF]/10 p-2.5 rounded-xl mr-3 border border-[#8265FF]/20">
+        <FiSettings className="text-[#8265FF]" size={18} />
       </div>
-      <h3 className="text-xl font-semibold text-gray-800">Data Preprocessing</h3>
+      <div>
+        <h3 className="text-base font-bold text-white">Pipeline Preprocessing Setup</h3>
+        <p className="text-xs text-[#A4A4B8]">Deterministic data transformation steps fitted on training folds</p>
+      </div>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Missing Values */}
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-          Missing Values
-          <span className="ml-1 text-gray-400" title="How to handle missing data">
-            <FiHelpCircle size={16} />
+      <div className="bg-[#171630] p-4 rounded-xl border border-white/[0.06] space-y-2">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 flex items-center justify-between">
+          <span>Missing Values</span>
+          <span className="text-[#A4A4B8]" title="Strategy for handling missing cells in dataset">
+            <FiHelpCircle size={14} />
           </span>
         </label>
-        <select 
-          value={missingStrategy} 
-          onChange={e => setMissingStrategy(e.target.value)} 
-          className="w-full px-3 py-2 border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+        <select
+          value={missingStrategy}
+          onChange={(e) => setMissingStrategy(e.target.value)}
+          className="w-full px-3 py-2 bg-[#0D0D1B] border border-white/[0.1] rounded-lg text-xs text-white focus:outline-none focus:border-[#8265FF]"
         >
           <option value="drop">Drop Rows</option>
-          <option value="mean">Fill with Mean</option>
-          <option value="median">Fill with Median</option>
+          <option value="mean">Fill with Mean (Numeric)</option>
+          <option value="median">Fill with Median (Numeric)</option>
         </select>
+        <p className="text-[10px] text-[#A4A4B8]">Applied automatically per column</p>
       </div>
 
       {/* Categorical Encoding */}
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-          Categorical Encoding
-          <span className="ml-1 text-gray-400" title="How to encode categorical variables">
-            <FiHelpCircle size={16} />
+      <div className="bg-[#171630] p-4 rounded-xl border border-white/[0.06] space-y-2">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 flex items-center justify-between">
+          <span>Categorical Encoding</span>
+          <span className="text-[#A4A4B8]" title="How string & categorical columns are mapped to numbers">
+            <FiHelpCircle size={14} />
           </span>
         </label>
-        <select 
-          value={encodingStrategy} 
-          onChange={e => setEncodingStrategy(e.target.value)} 
-          className="w-full px-3 py-2 border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+        <select
+          value={encodingStrategy}
+          onChange={(e) => setEncodingStrategy(e.target.value)}
+          className="w-full px-3 py-2 bg-[#0D0D1B] border border-white/[0.1] rounded-lg text-xs text-white focus:outline-none focus:border-[#8265FF]"
         >
+          <option value="onehot">One-Hot Encoding (Recommended)</option>
           <option value="label">Label Encoding</option>
-          <option value="onehot">One-Hot Encoding</option>
-          {/* Removed 'ordinal' to match original backend */}
         </select>
+        <p className="text-[10px] text-[#A4A4B8]">Handles unseen categories safely</p>
       </div>
 
       {/* Feature Scaling */}
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-          Feature Scaling
-          <span className="ml-1 text-gray-400" title="How to scale numerical features">
-            <FiHelpCircle size={16} />
+      <div className="bg-[#171630] p-4 rounded-xl border border-white/[0.06] space-y-2">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 flex items-center justify-between">
+          <span>Feature Scaling</span>
+          <span className="text-[#A4A4B8]" title="Numeric normalization & scaling method">
+            <FiHelpCircle size={14} />
           </span>
         </label>
-        <select 
-          value={scaler} 
-          onChange={e => setScaler(e.target.value)} 
-          className="w-full px-3 py-2 border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+        <select
+          value={scaler}
+          onChange={(e) => setScaler(e.target.value)}
+          className="w-full px-3 py-2 bg-[#0D0D1B] border border-white/[0.1] rounded-lg text-xs text-white focus:outline-none focus:border-[#8265FF]"
         >
-          <option value="standard">Standard Scaler</option>
-          <option value="minmax">MinMax Scaler</option>
-          {/* Removed 'robust' to match original backend */}
+          <option value="standard">StandardScaler (Zero mean, unit var)</option>
+          <option value="minmax">MinMaxScaler [0, 1]</option>
         </select>
+        <p className="text-[10px] text-[#A4A4B8]">Prevents feature scale dominance</p>
       </div>
 
       {/* Train/Test Split */}
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-          Train/Test Split
-          <span className="ml-1 text-gray-400" title="Ratio for splitting data into training and test sets">
-            <FiHelpCircle size={16} />
+      <div className="bg-[#171630] p-4 rounded-xl border border-white/[0.06] space-y-2">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 flex items-center justify-between">
+          <span>Train / Test Split</span>
+          <span className="text-[#A4A4B8]" title="Partition ratio for model holdout validation">
+            <FiHelpCircle size={14} />
           </span>
         </label>
-        <select 
-          value={splitRatio} 
-          onChange={e => setSplitRatio(e.target.value)} 
-          className="w-full px-3 py-2 border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+        <select
+          value={splitRatio}
+          onChange={(e) => setSplitRatio(e.target.value)}
+          className="w-full px-3 py-2 bg-[#0D0D1B] border border-white/[0.1] rounded-lg text-xs text-white focus:outline-none focus:border-[#8265FF]"
         >
-          <option value="0.8">80% Train / 20% Test</option>
-          <option value="0.7">70% Train / 30% Test</option>
-          {/* Removed '0.75' to match original backend */}
+          <option value="0.8">80% Train / 20% Holdout Test</option>
+          <option value="0.7">70% Train / 30% Holdout Test</option>
         </select>
+        <p className="text-[10px] text-[#A4A4B8]">Stratified for classification</p>
       </div>
     </div>
   </section>

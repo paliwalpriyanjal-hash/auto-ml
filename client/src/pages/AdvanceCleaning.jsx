@@ -262,65 +262,75 @@ export default function AutoMLStudio() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-6 bg-white rounded-xl shadow-lg mt-10">
+        <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
             {/* Header with step indicators */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-indigo-700 mb-2 text-center">
-                    Advanced Data Cleaning
-                </h1>
-                <p className="text-gray-600 text-center mb-6">
-                    Effortless advanced data cleaning powered by AI — upload your dataset and let smart algorithms handle the mess!
-                </p>
-
-                {/* Step progress bar */}
-                <div className="flex justify-between items-center mb-6 relative">
-                    <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -z-10"></div>
-                    {[1, 2, 3, 4].map((step) => (
-                        <div key={step} className="flex flex-col items-center">
-                            <button
-                                onClick={() => currentStep > step && goToStep(step)}
-                                className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-medium 
-                  ${currentStep >= step ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'} 
-                  ${currentStep > step ? 'cursor-pointer hover:bg-indigo-700' : 'cursor-default'}`}
-                            >
-                                {step}
-                            </button>
-                            <span className={`mt-2 text-sm font-medium ${currentStep >= step ? 'text-indigo-600' : 'text-gray-500'}`}>
-                                {step === 1 && 'Upload Data'}
-                                {step === 2 && 'Preview'}
-                                {step === 3 && 'Configure'}
-                                {step === 4 && 'Results'}
-                            </span>
-                        </div>
-                    ))}
+            <div className="border-b border-white/[0.08] pb-6">
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#A855F7] bg-[#A855F7]/10 px-2 py-0.5 rounded-full border border-[#A855F7]/20">
+                        Intelligent Preprocessing
+                    </span>
                 </div>
+                <h1 className="text-3xl font-extrabold text-white tracking-tight">
+                    Advanced Data Cleaning & Transformation
+                </h1>
+                <p className="text-sm text-[#A4A4B8] mt-1">
+                    KNN/iterative imputation, IQR outlier treatment, SMOTE class balancing, and TF-IDF extraction powered by AutoVeyra cleaner.
+                </p>
+            </div>
+
+            {/* Step progress bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                    { step: 1, title: '1. Ingestion' },
+                    { step: 2, title: '2. Inspection' },
+                    { step: 3, title: '3. Pipeline Setup' },
+                    { step: 4, title: '4. Cleaned Data' },
+                ].map(({ step, title }) => (
+                    <div
+                        key={step}
+                        onClick={() => currentStep > step && goToStep(step)}
+                        className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-semibold transition-all ${
+                            currentStep >= step
+                                ? 'bg-[#171630] border-[#8265FF]/40 text-white shadow-sm'
+                                : 'bg-[#111126] border-white/[0.06] text-[#A4A4B8]'
+                        } ${currentStep > step ? 'cursor-pointer hover:border-[#8265FF]/70' : ''}`}
+                    >
+                        <span>{title}</span>
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                            currentStep >= step ? 'bg-[#8265FF] text-white' : 'bg-white/[0.06] text-[#A4A4B8]'
+                        }`}>
+                            {step}
+                        </span>
+                    </div>
+                ))}
             </div>
 
             {/* Step 1: Upload Data */}
             {currentStep === 1 && (
-                <div className="space-y-6">
-                    <div className={`border-2 border-dashed ${fileError ? 'border-red-300' : 'border-gray-300 hover:border-indigo-400'} p-12 rounded-lg text-center transition-colors`}>
+                <section className="bg-[#111126] p-8 rounded-2xl border border-white/[0.08] shadow-2xl space-y-4">
+                    <div className={`border-2 border-dashed ${fileError ? 'border-rose-500/40 bg-rose-500/5' : 'border-white/[0.12] hover:border-[#8265FF]/50 bg-[#0D0D1B]'} p-12 rounded-2xl text-center transition-all`}>
                         <div className="flex flex-col items-center justify-center">
-                            <svg
-                                className={`w-16 h-16 ${fileError ? 'text-red-500' : 'text-indigo-500'} mb-4`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                />
-                            </svg>
-                            <h2 className="text-xl font-semibold mb-2">Upload Your Dataset</h2>
-                            <p className="text-gray-500 mb-4">Drag & drop your CSV file here or click to browse</p>
+                            <div className="w-16 h-16 rounded-2xl bg-[#8265FF]/10 text-[#8265FF] flex items-center justify-center mb-4 border border-[#8265FF]/20 shadow-lg shadow-[#8265FF]/10">
+                                <svg
+                                    className="w-8 h-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                    />
+                                </svg>
+                            </div>
+                            <h2 className="text-xl font-bold text-white mb-1">Upload Tabular Dataset</h2>
+                            <p className="text-xs text-[#A4A4B8] mb-5">Select or drop a CSV file to inspect schema and clean</p>
 
                             <input
                                 type="file"
-                                accept=".csv,.txt,.tsv,.xlsx,.xls"
+                                accept=".csv,.txt,.tsv"
                                 id="upload"
                                 className="hidden"
                                 onChange={handleFileUpload}
@@ -328,132 +338,117 @@ export default function AutoMLStudio() {
                             />
                             <label
                                 htmlFor="upload"
-                                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${fileError ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} cursor-pointer`}
+                                className="px-6 py-3 rounded-xl font-bold text-xs bg-gradient-to-r from-[#8265FF] to-[#A855F7] hover:from-[#7152f8] hover:to-[#9333ea] text-white shadow-lg shadow-[#8265FF]/25 cursor-pointer transition-all inline-flex items-center gap-2"
                             >
-                                {isAnalyzing ? 'Processing...' : 'Select File'}
+                                {isAnalyzing ? 'Analyzing schema...' : 'Select CSV File'}
                             </label>
-                            <p className="text-xs text-gray-500 mt-3">
-                                Supported formats: CSV, Excel. Max file size: 10MB
+                            <p className="text-[11px] text-[#A4A4B8]/60 mt-3 font-mono">
+                                Supported format: CSV (Max 10MB)
                             </p>
                         </div>
 
                         {fileError && (
-                            <div className="mt-4 text-red-600 font-medium">
+                            <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-medium">
                                 {fileError}
                             </div>
                         )}
                     </div>
-                </div>
+                </section>
             )}
 
-            {/* Step 2: Data Preview */}
+            {/* Step 2: Data Preview & Summary */}
             {currentStep === 2 && dataStats && (
                 <div className="space-y-6">
-                    {/* <div className="bg-indigo-50 p-4 rounded-lg">
-                        <h2 className="text-xl font-semibold text-indigo-800">Dataset Overview</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                            <div className="bg-white p-3 rounded shadow-sm">
-                                <p className="text-sm text-gray-500">Total Rows</p>
-                                <p className="text-2xl font-bold">{dataStats.totalRows.toLocaleString()}</p>
-                            </div>
-                            <div className="bg-white p-3 rounded shadow-sm">
-                                <p className="text-sm text-gray-500">Columns</p>
-                                <p className="text-2xl font-bold">{columns.length}</p>
-                            </div>
-                            <div className="bg-white p-3 rounded shadow-sm">
-                                <p className="text-sm text-gray-500">File Size</p>
-                                <p className="text-2xl font-bold">{Math.round(file.size / 1024)} KB</p>
-                            </div>
-                        </div>
-                    </div> */}
-                    {dataStats && (
-                        <DataSummary
-                            stats={dataStats}
-                            columns={columns}
-                            className="mb-8"
-                        />
-                    )}
+                    <DataSummary
+                        stats={dataStats}
+                        columns={columns}
+                    />
 
-                    <div className="overflow-x-auto p-4 border rounded-lg bg-gray-50">
-                        <h3 className="text-lg font-medium mb-3">Data Preview</h3>
-                        <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    {columns.map((col) => {
-                                        const colName = typeof col === 'object' ? col.name : col;
-                                        return (
-                                            <th
-                                                key={colName}
-                                                className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
-                                            >
-                                                {colName}
-                                            </th>
-                                        );
-                                    })}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {previewData.map((row, idx) => (
-                                    <tr key={idx}>
+                    <div className="bg-[#111126] border border-white/[0.08] p-6 rounded-2xl shadow-xl space-y-4">
+                        <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                            <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+                                First 5 Raw Data Samples
+                            </h3>
+                            <span className="text-xs text-[#A4A4B8] font-mono">
+                                {columns.length} Total Columns Detected
+                            </span>
+                        </div>
+                        <div className="overflow-x-auto border border-white/[0.06] rounded-xl">
+                            <table className="min-w-full divide-y divide-white/[0.06] text-xs text-left">
+                                <thead className="bg-[#0D0D1B]">
+                                    <tr>
                                         {columns.map((col) => {
                                             const colName = typeof col === 'object' ? col.name : col;
                                             return (
-                                                <td
-                                                    key={`${idx}-${colName}`}
-                                                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-700"
+                                                <th
+                                                    key={colName}
+                                                    className="px-4 py-3 text-[#A4A4B8] font-medium uppercase tracking-wider font-mono text-[11px]"
                                                 >
-                                                    {row[colName] || <span className="text-gray-400 italic">empty</span>}
-                                                </td>
+                                                    {colName}
+                                                </th>
                                             );
                                         })}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.04]">
+                                    {previewData.map((row, idx) => (
+                                        <tr key={idx} className="hover:bg-white/[0.02]">
+                                            {columns.map((col) => {
+                                                const colName = typeof col === 'object' ? col.name : col;
+                                                return (
+                                                    <td
+                                                        key={`${idx}-${colName}`}
+                                                        className="px-4 py-2.5 font-mono text-[#F7F7FC]"
+                                                    >
+                                                        {row[colName] || <span className="text-[#A4A4B8]/40 italic">empty</span>}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center pt-2">
                         <button
                             onClick={handleReset}
-                            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            className="px-4 py-2.5 rounded-xl border border-white/[0.08] bg-[#171630] hover:bg-[#1f1e40] text-xs font-semibold text-white transition-all"
                         >
                             Start Over
                         </button>
                         <button
                             onClick={nextStep}
-                            className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700"
+                            className="px-6 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-[#8265FF] to-[#A855F7] hover:from-[#7152f8] hover:to-[#9333ea] text-white shadow-lg shadow-[#8265FF]/25 transition-all"
                         >
-                            Configure Data Cleaning
+                            Configure Cleaning Pipeline →
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* Step 3: Model Configuration */}
+            {/* Step 3: Configuration */}
             {currentStep === 3 && (
                 <div className="space-y-6">
-                    <h2 className="text-xl font-semibold">Cleaning Now</h2>
+                    <PreprocessingOption
+                        onChange={handlePreprocessingChange}
+                        columns={columns}
+                        dataStats={dataStats}
+                    />
 
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <PreprocessingOption
-                            onChange={handlePreprocessingChange}
-                            columns={columns}
-                            dataStats={dataStats}
-                        />
-                    </div>
-
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center pt-2">
                         <button
                             onClick={prevStep}
-                            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            className="px-4 py-2.5 rounded-xl border border-white/[0.08] bg-[#171630] hover:bg-[#1f1e40] text-xs font-semibold text-white transition-all"
                         >
-                            Back
+                            ← Back to Preview
                         </button>
                         <button
                             onClick={nextStep}
-                            className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700"
+                            className="px-6 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-[#8265FF] to-[#A855F7] hover:from-[#7152f8] hover:to-[#9333ea] text-white shadow-lg shadow-[#8265FF]/25 transition-all"
                         >
-                            Clean Your Data
+                            Execute Cleaning Pipeline →
                         </button>
                     </div>
                 </div>
@@ -462,29 +457,25 @@ export default function AutoMLStudio() {
             {/* Step 4: Results */}
             {currentStep === 4 && (
                 <div className="space-y-6">
-                    <h2 className="text-xl font-semibold">AutoML Results</h2>
+                    <AdvancedResult
+                        csv={file}
+                        preprocessing={preprocessing}
+                        columns={columns}
+                        dataStats={dataStats}
+                    />
 
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <AdvancedResult
-                            csv={file}
-                            preprocessing={preprocessing}
-                            columns={columns}
-                            dataStats={dataStats}
-                        />
-                    </div>
-
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center pt-2">
                         <button
                             onClick={prevStep}
-                            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            className="px-4 py-2.5 rounded-xl border border-white/[0.08] bg-[#171630] hover:bg-[#1f1e40] text-xs font-semibold text-white transition-all"
                         >
-                            Back
+                            ← Adjust Parameters
                         </button>
                         <button
                             onClick={handleReset}
-                            className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700"
+                            className="px-6 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-[#8265FF] to-[#A855F7] hover:from-[#7152f8] hover:to-[#9333ea] text-white shadow-lg shadow-[#8265FF]/25 transition-all"
                         >
-                            Start New Project
+                            Clean Another Dataset
                         </button>
                     </div>
                 </div>

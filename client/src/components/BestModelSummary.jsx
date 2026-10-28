@@ -1,118 +1,198 @@
-import React from 'react';
-import { FiTrendingUp, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import React from "react";
+import { FiTrendingUp, FiCheckCircle, FiLayers } from "react-icons/fi";
+import { Link } from "react-router-dom";
 
-/**
- * Renders the best-model summary card with holdout metrics.
- *
- * Props:
- *   bestModel      – { model, cv_mean, cv_std, holdout_metrics: {...} }
- *   rankingMetric  – string (e.g. "f1_macro")
- *   cvFolds        – number
- *   taskType       – "classification" | "regression"
- *   classes        – array of class labels (classification only)
- *   warnings       – array of warning strings
- *   dataQuality    – data_quality object from backend response
- */
+const ClassificationHoldout = ({ holdout }) => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="p-4 rounded-xl bg-[#0D0D1B] border border-white/[0.06]">
+      <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">Accuracy</p>
+      <p className="text-xl font-bold font-mono text-emerald-400 mt-1">
+        {holdout.accuracy != null ? `${(holdout.accuracy * 100).toFixed(1)}%` : "N/A"}
+      </p>
+      <p className="text-[10px] text-[#A4A4B8] mt-1">Overall correctness</p>
+    </div>
+    <div className="p-4 rounded-xl bg-[#0D0D1B] border border-white/[0.06]">
+      <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">F1 Macro</p>
+      <p className="text-xl font-bold font-mono text-[#8265FF] mt-1">
+        {holdout.f1_macro != null ? holdout.f1_macro.toFixed(4) : "N/A"}
+      </p>
+      <p className="text-[10px] text-[#A4A4B8] mt-1">Unweighted harmonic mean</p>
+    </div>
+    <div className="p-4 rounded-xl bg-[#0D0D1B] border border-white/[0.06]">
+      <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">Balanced Accuracy</p>
+      <p className="text-xl font-bold font-mono text-white mt-1">
+        {holdout.balanced_accuracy != null ? `${(holdout.balanced_accuracy * 100).toFixed(1)}%` : "N/A"}
+      </p>
+      <p className="text-[10px] text-[#A4A4B8] mt-1">Per-class recall average</p>
+    </div>
+    <div className="p-4 rounded-xl bg-[#0D0D1B] border border-white/[0.06]">
+      <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">ROC-AUC</p>
+      <p className="text-xl font-bold font-mono text-white mt-1">
+        {holdout.roc_auc != null ? holdout.roc_auc.toFixed(4) : "N/A"}
+      </p>
+      <p className="text-[10px] text-[#A4A4B8] mt-1">Discrimination power</p>
+    </div>
+  </div>
+);
+
+const RegressionHoldout = ({ holdout }) => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="p-4 rounded-xl bg-[#0D0D1B] border border-white/[0.06]">
+      <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">RMSE</p>
+      <p className="text-xl font-bold font-mono text-emerald-400 mt-1">
+        {holdout.rmse != null ? holdout.rmse.toFixed(4) : "N/A"}
+      </p>
+      <p className="text-[10px] text-[#A4A4B8] mt-1">Root Mean Squared Error</p>
+    </div>
+    <div className="p-4 rounded-xl bg-[#0D0D1B] border border-white/[0.06]">
+      <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">R² Score</p>
+      <p className="text-xl font-bold font-mono text-[#8265FF] mt-1">
+        {holdout.r2 != null ? holdout.r2.toFixed(4) : "N/A"}
+      </p>
+      <p className="text-[10px] text-[#A4A4B8] mt-1">Variance explained</p>
+    </div>
+    <div className="p-4 rounded-xl bg-[#0D0D1B] border border-white/[0.06]">
+      <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">MAE</p>
+      <p className="text-xl font-bold font-mono text-white mt-1">
+        {holdout.mae != null ? holdout.mae.toFixed(4) : "N/A"}
+      </p>
+      <p className="text-[10px] text-[#A4A4B8] mt-1">Mean Absolute Error</p>
+    </div>
+    <div className="p-4 rounded-xl bg-[#0D0D1B] border border-white/[0.06]">
+      <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">Max Error</p>
+      <p className="text-xl font-bold font-mono text-white mt-1">
+        {holdout.max_error != null ? holdout.max_error.toFixed(4) : "N/A"}
+      </p>
+      <p className="text-[10px] text-[#A4A4B8] mt-1">Worst-case deviation</p>
+    </div>
+  </div>
+);
+
 const BestModelSummary = ({
   bestModel,
-  rankingMetric = '',
+  rankingMetric = "",
   cvFolds = 5,
-  taskType = 'regression',
+  taskType = "regression",
   classes = [],
   warnings = [],
   dataQuality = null,
+  registeredModel = null,
 }) => {
   if (!bestModel) return null;
 
   const holdout = bestModel.holdout_metrics || {};
-  const metricLabel = rankingMetric.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  const isClassification = taskType === 'classification';
+  const metricLabel = rankingMetric
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const isClassification = taskType === "classification";
 
   return (
     <div className="space-y-6">
-      {/* Winner Card */}
-      <section className="bg-gradient-to-r from-yellow-600 to-gray-600 rounded-xl shadow-lg overflow-hidden text-white">
-        <div className="p-6">
-          <h3 className="text-2xl font-bold flex items-center">
-            🏆 Best Model: {bestModel.model}
-          </h3>
-          <p className="opacity-90 mt-1 text-sm">
-            Ranked #1 by {metricLabel} across {cvFolds}-fold cross-validation
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-            <div className="bg-white/20 rounded-lg p-3">
-              <p className="text-xs uppercase opacity-75">CV Mean ({metricLabel})</p>
-              <p className="text-xl font-bold font-mono">
-                {bestModel.cv_mean != null ? bestModel.cv_mean.toFixed(4) : 'N/A'}
+      {/* Winner Spotlight Card */}
+      <section className="bg-gradient-to-tr from-[#111126] via-[#171630] to-[#0D0D1B] rounded-2xl border border-[#8265FF]/40 p-6 shadow-2xl glow-purple relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#8265FF]/20 text-[#8265FF] border border-[#8265FF]/30">
+                  Winning Algorithm
+                </span>
+                <span className="text-xs text-[#A4A4B8]">
+                  Across {cvFolds}-fold cross validation
+                </span>
+              </div>
+              <h3 className="text-2xl font-extrabold text-white flex items-center gap-2">
+                🏆 {bestModel.model}
+              </h3>
+            </div>
+
+            {registeredModel && (
+              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl">
+                <FiCheckCircle className="text-emerald-400 w-4 h-4" />
+                <div className="text-left text-xs">
+                  <span className="font-semibold text-emerald-300 block">Saved to Model Registry</span>
+                  <Link to={`/predict?model=${registeredModel.id}`} className="text-[#8265FF] hover:underline font-medium">
+                    Test Live Prediction →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-[#070711]/60 border border-white/[0.08] rounded-xl p-3.5">
+              <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">
+                CV Mean ({metricLabel})
+              </p>
+              <p className="text-2xl font-bold font-mono text-emerald-400 mt-1">
+                {bestModel.cv_mean != null ? bestModel.cv_mean.toFixed(4) : "N/A"}
               </p>
             </div>
-            <div className="bg-white/20 rounded-lg p-3">
-              <p className="text-xs uppercase opacity-75">CV Std Dev</p>
-              <p className="text-xl font-bold font-mono">
-                ± {bestModel.cv_std != null ? bestModel.cv_std.toFixed(4) : 'N/A'}
+            <div className="bg-[#070711]/60 border border-white/[0.08] rounded-xl p-3.5">
+              <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">
+                CV Std Deviation
+              </p>
+              <p className="text-2xl font-bold font-mono text-white mt-1">
+                ± {bestModel.cv_std != null ? bestModel.cv_std.toFixed(4) : "N/A"}
               </p>
             </div>
-            <div className="bg-white/20 rounded-lg p-3">
-              <p className="text-xs uppercase opacity-75">CV Folds</p>
-              <p className="text-xl font-bold">{cvFolds}</p>
+            <div className="bg-[#070711]/60 border border-white/[0.08] rounded-xl p-3.5">
+              <p className="text-[10px] uppercase tracking-wider text-[#A4A4B8]">
+                Validation Folds
+              </p>
+              <p className="text-2xl font-bold font-mono text-[#8265FF] mt-1">
+                {cvFolds}
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Holdout Metrics */}
-      <section className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-800 flex items-center">
-            <FiTrendingUp className="text-purple-500 mr-2" />
+      {/* Holdout Test Metrics */}
+      <section className="bg-[#111126] rounded-2xl border border-white/[0.08] p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <FiTrendingUp className="text-[#8265FF]" />
             Holdout Test Metrics — {bestModel.model}
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Evaluated on the unseen test split
-          </p>
+          <span className="text-xs text-[#A4A4B8]">Evaluated on unseen test partition</span>
         </div>
 
-        <div className="p-6">
-          {isClassification ? (
-            <ClassificationHoldout holdout={holdout} />
-          ) : (
-            <RegressionHoldout holdout={holdout} />
-          )}
-        </div>
+        {isClassification ? (
+          <ClassificationHoldout holdout={holdout} />
+        ) : (
+          <RegressionHoldout holdout={holdout} />
+        )}
       </section>
 
       {/* Confusion Matrix (classification only) */}
       {isClassification && holdout.confusion_matrix && (
-        <section className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-800">Confusion Matrix</h3>
-            <p className="text-xs text-gray-500 mt-1">Rows = True Class, Columns = Predicted Class</p>
+        <section className="bg-[#111126] rounded-2xl border border-white/[0.08] p-6 shadow-xl space-y-4">
+          <div className="border-b border-white/[0.06] pb-3">
+            <h3 className="text-base font-bold text-white">Confusion Matrix</h3>
+            <p className="text-xs text-[#A4A4B8] mt-0.5">Rows = True Class, Columns = Predicted Class</p>
           </div>
-          <div className="p-6 overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 border border-gray-200 text-center">
-              <thead className="bg-gray-100">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border border-white/[0.08] text-center text-xs divide-y divide-white/[0.08]">
+              <thead className="bg-[#0D0D1B]">
                 <tr>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">True \ Pred</th>
+                  <th className="px-4 py-3 text-left font-semibold text-[#A4A4B8]">True \ Pred</th>
                   {holdout.confusion_matrix.labels.map((lbl) => (
-                    <th key={lbl} className="px-3 py-2 text-xs font-semibold text-gray-700 uppercase">{lbl}</th>
+                    <th key={lbl} className="px-4 py-3 font-semibold text-white uppercase">{lbl}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {holdout.confusion_matrix.matrix.map((row, rowIdx) => (
-                  <tr key={rowIdx}>
-                    <td className="px-3 py-2 text-xs font-bold text-gray-700 bg-gray-50">
-                      {holdout.confusion_matrix.labels[rowIdx]}
+              <tbody className="divide-y divide-white/[0.04]">
+                {holdout.confusion_matrix.matrix.map((row, rIdx) => (
+                  <tr key={rIdx}>
+                    <td className="px-4 py-3 font-bold text-left text-white bg-[#0D0D1B]/60">
+                      {holdout.confusion_matrix.labels[rIdx]}
                     </td>
-                    {row.map((cell, colIdx) => (
+                    {row.map((cell, cIdx) => (
                       <td
-                        key={colIdx}
-                        className={`px-4 py-2 text-sm font-medium ${
-                          rowIdx === colIdx
-                            ? 'bg-green-50 text-green-700 font-bold'
-                            : cell > 0
-                            ? 'bg-red-50 text-red-600'
-                            : 'text-gray-500'
+                        key={cIdx}
+                        className={`px-4 py-3 font-mono font-bold ${
+                          rIdx === cIdx ? "bg-emerald-500/10 text-emerald-400" : "text-[#A4A4B8]"
                         }`}
                       >
                         {cell}
@@ -126,123 +206,19 @@ const BestModelSummary = ({
         </section>
       )}
 
-      {/* Data Quality */}
-      {dataQuality && (
-        <section className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
-              <FiInfo className="text-blue-500 mr-2" />
-              Data Quality Summary
-            </h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Stat label="Initial Shape" value={dataQuality.initial_shape} />
-              <Stat label="Final Shape" value={dataQuality.final_shape} />
-              <Stat label="Training Samples" value={dataQuality.training_samples} />
-              <Stat label="Testing Samples" value={dataQuality.testing_samples} />
-              <Stat label="Dropped (Target NaN)" value={dataQuality.dropped_target_nans} />
-              <Stat label="Dropped (Feature NaN)" value={dataQuality.dropped_feature_nans} />
-              <Stat label="Numeric Features" value={dataQuality.feature_counts?.numeric} />
-              <Stat label="Categorical Features" value={dataQuality.feature_counts?.categorical} />
-            </div>
-            {dataQuality.class_distribution && (
-              <div className="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Class Distribution</h4>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(dataQuality.class_distribution).map(([cls, count]) => (
-                    <span key={cls} className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                      {cls}: {count}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Warnings */}
+      {/* Warnings & Data Quality Note */}
       {warnings && warnings.length > 0 && (
-        <section className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
-          <h4 className="text-xs font-bold text-yellow-800 uppercase tracking-wider mb-2 flex items-center">
-            <FiAlertTriangle className="mr-1" size={14} />
-            Evaluation Diagnostics
-          </h4>
-          <ul className="list-disc list-inside text-xs text-yellow-700 space-y-1">
-            {warnings.map((w, idx) => (
-              <li key={idx}>{w}</li>
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs space-y-1">
+          <span className="font-bold">Evaluation Warnings:</span>
+          <ul className="list-disc list-inside space-y-0.5">
+            {warnings.map((w, i) => (
+              <li key={i}>{w}</li>
             ))}
           </ul>
-        </section>
+        </div>
       )}
     </div>
   );
 };
-
-/* ---- Sub-components ---- */
-
-const Stat = ({ label, value }) => (
-  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-    <p className="text-xs text-gray-500 uppercase">{label}</p>
-    <p className="text-lg font-semibold text-gray-800">{value ?? '–'}</p>
-  </div>
-);
-
-const MetricCard = ({ label, value, color = 'blue', hint = '' }) => {
-  const colorMap = {
-    blue:    'bg-blue-50 border-blue-100 text-blue-800 text-blue-600',
-    green:   'bg-green-50 border-green-100 text-green-800 text-green-600',
-    purple:  'bg-purple-50 border-purple-100 text-purple-800 text-purple-600',
-    amber:   'bg-amber-50 border-amber-100 text-amber-800 text-amber-600',
-    red:     'bg-red-50 border-red-100 text-red-800 text-red-600',
-    indigo:  'bg-indigo-50 border-indigo-100 text-indigo-800 text-indigo-600',
-    emerald: 'bg-emerald-50 border-emerald-100 text-emerald-800 text-emerald-600',
-    rose:    'bg-rose-50 border-rose-100 text-rose-800 text-rose-600',
-  };
-  const [bg, border, textLabel, textValue] = (colorMap[color] || colorMap.blue).split(' ');
-
-  return (
-    <div className={`${bg} p-4 rounded-lg border ${border}`}>
-      <h4 className={`text-sm font-medium ${textLabel} mb-1`}>{label}</h4>
-      <p className={`text-2xl font-bold ${textValue}`}>
-        {value != null ? (typeof value === 'number' ? value.toFixed(4) : value) : 'N/A'}
-      </p>
-      {hint && <p className={`text-xs ${textLabel} mt-1 opacity-70`}>{hint}</p>}
-    </div>
-  );
-};
-
-const ClassificationHoldout = ({ holdout }) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <MetricCard label="Accuracy" value={holdout.accuracy != null ? (holdout.accuracy * 100).toFixed(2) + '%' : null} color="blue" hint="Overall correct predictions" />
-      <MetricCard label="Balanced Accuracy" value={holdout.balanced_accuracy != null ? (holdout.balanced_accuracy * 100).toFixed(2) + '%' : null} color="green" hint="Balanced across class frequencies" />
-      <MetricCard label="F1 Score (Macro)" value={holdout.f1_macro} color="purple" hint="Unweighted harmonic mean" />
-      <MetricCard label="F1 Score (Weighted)" value={holdout.f1_weighted} color="indigo" hint="Support-weighted harmonic mean" />
-      <MetricCard label="Precision / Recall (Macro)" value={
-        holdout.precision_macro != null && holdout.recall_macro != null
-          ? `${(holdout.precision_macro * 100).toFixed(1)}% / ${(holdout.recall_macro * 100).toFixed(1)}%`
-          : null
-      } color="emerald" hint="Precision / Recall macro-averaged" />
-      {holdout.roc_auc != null && (
-        <MetricCard label="ROC-AUC" value={holdout.roc_auc} color="amber" hint="Area under ROC curve" />
-      )}
-      {holdout.log_loss != null && (
-        <MetricCard label="Log Loss" value={holdout.log_loss} color="rose" hint="Cross-entropy loss (lower is better)" />
-      )}
-    </div>
-  </div>
-);
-
-const RegressionHoldout = ({ holdout }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <MetricCard label="RMSE" value={holdout.rmse} color="blue" hint="Lower is better" />
-    <MetricCard label="R² Score" value={holdout.r2} color="green" hint="Closer to 1 is better" />
-    <MetricCard label="MAE" value={holdout.mae} color="purple" hint="Lower is better" />
-    <MetricCard label="Explained Variance" value={holdout.explained_variance} color="amber" hint="Closer to 1 is better" />
-    <MetricCard label="Max Error" value={holdout.max_error} color="red" hint="Largest single error" />
-  </div>
-);
 
 export default BestModelSummary;

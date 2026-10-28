@@ -82,19 +82,24 @@ export default function PreprocessingOption({ columns = [], onChange }) {
   };
 
   return (
-    <div className="space-y-6 mb-6 p-6 border rounded-lg bg-white shadow-sm">
-      <h3 className="text-xl font-bold text-gray-900">Advanced Data Preprocessing</h3>
-      <p className="text-sm text-gray-500">Select preprocessing options to apply to your dataset</p>
+    <div className="space-y-6 mb-6 p-6 border border-white/[0.08] rounded-2xl bg-[#111126] shadow-xl">
+      <div className="border-b border-white/[0.06] pb-4">
+        <h3 className="text-base font-bold text-white">Data Cleaning & Transformation Engine</h3>
+        <p className="text-xs text-[#A4A4B8]">Activate intelligent transformation algorithms for missing values, outliers, and text columns</p>
+      </div>
       
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Missing Data Handling */}
-        <div className="border-b pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900">Missing Data Handling</h4>
+        <div className="border-b border-white/[0.06] pb-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-white">Missing Data Handling</h4>
+              <p className="text-[11px] text-[#A4A4B8]">Impute null cells using KNN or iterative multivariable estimation</p>
+            </div>
             <Switch
               checked={selectedOptions.impute_missing}
               onChange={() => toggleOption('impute_missing')}
-              className={`${selectedOptions.impute_missing ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+              className={`${selectedOptions.impute_missing ? 'bg-[#8265FF]' : 'bg-[#171630] border border-white/[0.1]'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer`}
             >
               <span className="sr-only">Enable missing data imputation</span>
               <span
@@ -104,26 +109,26 @@ export default function PreprocessingOption({ columns = [], onChange }) {
           </div>
           
           {selectedOptions.impute_missing && (
-            <div className="ml-8 space-y-4">
+            <div className="mt-3 p-4 bg-[#0D0D1B] rounded-xl border border-white/[0.06] space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Imputation Method</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">Imputation Method</label>
                 <select
                   name="imputation_method"
                   value={selectedOptions.imputation_method}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
                 >
-                  <option value="knn">KNN Imputation</option>
-                  <option value="iterative">Iterative Imputer</option>
-                  <option value="mean">Mean</option>
-                  <option value="median">Median</option>
-                  <option value="most_frequent">Most Frequent</option>
+                  <option value="knn">KNN Imputation (K-Nearest Neighbors)</option>
+                  <option value="iterative">Iterative Imputer (Multivariate MICE)</option>
+                  <option value="mean">Mean (Univariate Numeric)</option>
+                  <option value="median">Median (Robust Numeric)</option>
+                  <option value="most_frequent">Most Frequent (Mode)</option>
                 </select>
               </div>
               
               {selectedOptions.imputation_method === 'knn' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Number of Neighbors</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">Number of Neighbors (K)</label>
                   <input
                     type="number"
                     name="imputation_n_neighbors"
@@ -131,7 +136,7 @@ export default function PreprocessingOption({ columns = [], onChange }) {
                     max="20"
                     value={selectedOptions.imputation_n_neighbors}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
                   />
                 </div>
               )}
@@ -140,13 +145,16 @@ export default function PreprocessingOption({ columns = [], onChange }) {
         </div>
 
         {/* Outlier Handling */}
-        <div className="border-b pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900">Outlier Detection & Treatment</h4>
+        <div className="border-b border-white/[0.06] pb-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-white">Outlier Detection & Treatment</h4>
+              <p className="text-[11px] text-[#A4A4B8]">Truncate or isolate abnormal extreme value points</p>
+            </div>
             <Switch
               checked={selectedOptions.remove_outliers}
               onChange={() => toggleOption('remove_outliers')}
-              className={`${selectedOptions.remove_outliers ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+              className={`${selectedOptions.remove_outliers ? 'bg-[#8265FF]' : 'bg-[#171630] border border-white/[0.1]'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer`}
             >
               <span className="sr-only">Enable outlier handling</span>
               <span
@@ -156,25 +164,25 @@ export default function PreprocessingOption({ columns = [], onChange }) {
           </div>
           
           {selectedOptions.remove_outliers && (
-            <div className="ml-8 space-y-4">
+            <div className="mt-3 p-4 bg-[#0D0D1B] rounded-xl border border-white/[0.06] space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Detection Method</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">Detection Method</label>
                 <select
                   name="outlier_method"
                   value={selectedOptions.outlier_method}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
                 >
-                  <option value="iqr">IQR (1.5x)</option>
-                  <option value="zscore">Z-Score (3σ)</option>
+                  <option value="iqr">IQR (Interquartile Range 1.5x)</option>
+                  <option value="zscore">Z-Score (Standard deviation 3σ)</option>
                   <option value="isolation">Isolation Forest</option>
-                  <option value="dbscan">DBSCAN</option>
+                  <option value="dbscan">DBSCAN Clustering</option>
                 </select>
               </div>
               
               {selectedOptions.outlier_method === 'iqr' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">IQR Threshold</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">IQR Threshold</label>
                   <input
                     type="number"
                     name="outlier_threshold"
@@ -183,7 +191,7 @@ export default function PreprocessingOption({ columns = [], onChange }) {
                     max="3"
                     value={selectedOptions.outlier_threshold}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
                   />
                 </div>
               )}
@@ -192,13 +200,16 @@ export default function PreprocessingOption({ columns = [], onChange }) {
         </div>
 
         {/* Feature Scaling */}
-        <div className="border-b pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900">Feature Scaling</h4>
+        <div className="border-b border-white/[0.06] pb-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-white">Feature Scaling & Normalization</h4>
+              <p className="text-[11px] text-[#A4A4B8]">Scale numeric columns for uniform gradient convergence</p>
+            </div>
             <Switch
               checked={selectedOptions.feature_scaling}
               onChange={() => toggleOption('feature_scaling')}
-              className={`${selectedOptions.feature_scaling ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+              className={`${selectedOptions.feature_scaling ? 'bg-[#8265FF]' : 'bg-[#171630] border border-white/[0.1]'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer`}
             >
               <span className="sr-only">Enable feature scaling</span>
               <span
@@ -208,33 +219,34 @@ export default function PreprocessingOption({ columns = [], onChange }) {
           </div>
           
           {selectedOptions.feature_scaling && (
-            <div className="ml-8 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Scaling Method</label>
-                <select
-                  name="scaling_method"
-                  value={selectedOptions.scaling_method}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  <option value="standard">Standard (Z-score)</option>
-                  <option value="minmax">Min-Max (0-1)</option>
-                  <option value="robust">Robust (with outliers)</option>
-                  <option value="power">Power (Yeo-Johnson)</option>
-                </select>
-              </div>
+            <div className="mt-3 p-4 bg-[#0D0D1B] rounded-xl border border-white/[0.06]">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">Scaling Method</label>
+              <select
+                name="scaling_method"
+                value={selectedOptions.scaling_method}
+                onChange={handleInputChange}
+                className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
+              >
+                <option value="standard">StandardScaler (Z-score mean=0, std=1)</option>
+                <option value="minmax">MinMaxScaler [0, 1]</option>
+                <option value="robust">RobustScaler (Median / IQR)</option>
+                <option value="power">PowerTransformer (Yeo-Johnson)</option>
+              </select>
             </div>
           )}
         </div>
 
         {/* Categorical Encoding */}
-        <div className="border-b pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900">Categorical Encoding</h4>
+        <div className="border-b border-white/[0.06] pb-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-white">Categorical Encoding</h4>
+              <p className="text-[11px] text-[#A4A4B8]">Convert discrete string features to numeric tensors</p>
+            </div>
             <Switch
               checked={selectedOptions.encode_categorical}
               onChange={() => toggleOption('encode_categorical')}
-              className={`${selectedOptions.encode_categorical ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+              className={`${selectedOptions.encode_categorical ? 'bg-[#8265FF]' : 'bg-[#171630] border border-white/[0.1]'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer`}
             >
               <span className="sr-only">Enable categorical encoding</span>
               <span
@@ -244,106 +256,34 @@ export default function PreprocessingOption({ columns = [], onChange }) {
           </div>
           
           {selectedOptions.encode_categorical && (
-            <div className="ml-8 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Encoding Method</label>
-                <select
-                  name="encoding_method"
-                  value={selectedOptions.encoding_method}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  <option value="onehot">One-Hot</option>
-                  <option value="target">Target Encoding</option>
-                  <option value="frequency">Frequency Encoding</option>
-                  <option value="leaveoneout">Leave-One-Out</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Feature Engineering */}
-        <div className="border-b pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900">Feature Engineering</h4>
-            <Switch
-              checked={selectedOptions.feature_engineering}
-              onChange={() => toggleOption('feature_engineering')}
-              className={`${selectedOptions.feature_engineering ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
-            >
-              <span className="sr-only">Enable feature engineering</span>
-              <span
-                className={`${selectedOptions.feature_engineering ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition`}
-              />
-            </Switch>
-          </div>
-          
-          {selectedOptions.feature_engineering && (
-            <div className="ml-8 space-y-4">
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="create_interactions"
-                    name="create_interactions"
-                    type="checkbox"
-                    checked={selectedOptions.create_interactions}
-                    onChange={handleCheckboxChange}
-                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="create_interactions" className="font-medium text-gray-700">
-                    Create interaction features
-                  </label>
-                  <p className="text-gray-500">Multiply numeric features to capture interactions</p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="polynomial_features"
-                    name="polynomial_features"
-                    type="checkbox"
-                    checked={selectedOptions.polynomial_features}
-                    onChange={handleCheckboxChange}
-                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="polynomial_features" className="font-medium text-gray-700">
-                    Add polynomial features
-                  </label>
-                  <p className="text-gray-500">Create polynomial combinations of numeric features</p>
-                  {selectedOptions.polynomial_features && (
-                    <div className="mt-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Polynomial Degree</label>
-                      <input
-                        type="number"
-                        name="polynomial_degree"
-                        min="2"
-                        max="5"
-                        value={selectedOptions.polynomial_degree}
-                        onChange={handleInputChange}
-                        className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="mt-3 p-4 bg-[#0D0D1B] rounded-xl border border-white/[0.06]">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">Encoding Method</label>
+              <select
+                name="encoding_method"
+                value={selectedOptions.encoding_method}
+                onChange={handleInputChange}
+                className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
+              >
+                <option value="onehot">One-Hot Encoding</option>
+                <option value="target">Target Encoding</option>
+                <option value="frequency">Frequency Encoding</option>
+                <option value="leaveoneout">Leave-One-Out</option>
+              </select>
             </div>
           )}
         </div>
 
         {/* Text Processing */}
-        <div className="border-b pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900">Text Processing</h4>
+        <div className="border-b border-white/[0.06] pb-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-white">Free-Text NLP Processing</h4>
+              <p className="text-[11px] text-[#A4A4B8]">Vectorize text columns using TF-IDF or Count vectors</p>
+            </div>
             <Switch
               checked={selectedOptions.text_processing}
               onChange={() => toggleOption('text_processing')}
-              className={`${selectedOptions.text_processing ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+              className={`${selectedOptions.text_processing ? 'bg-[#8265FF]' : 'bg-[#171630] border border-white/[0.1]'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer`}
             >
               <span className="sr-only">Enable text processing</span>
               <span
@@ -353,118 +293,34 @@ export default function PreprocessingOption({ columns = [], onChange }) {
           </div>
           
           {selectedOptions.text_processing && (
-            <div className="ml-8 space-y-4">
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="remove_stopwords"
-                    name="remove_stopwords"
-                    type="checkbox"
-                    checked={selectedOptions.remove_stopwords}
-                    onChange={handleCheckboxChange}
-                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="remove_stopwords" className="font-medium text-gray-700">
-                    Remove stop words
-                  </label>
-                  <p className="text-gray-500">Remove common words (the, and, etc.)</p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="lemmatize"
-                    name="lemmatize"
-                    type="checkbox"
-                    checked={selectedOptions.lemmatize}
-                    onChange={handleCheckboxChange}
-                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="lemmatize" className="font-medium text-gray-700">
-                    Lemmatize words
-                  </label>
-                  <p className="text-gray-500">Reduce words to their base/dictionary form</p>
-                </div>
-              </div>
-
+            <div className="mt-3 p-4 bg-[#0D0D1B] rounded-xl border border-white/[0.06] space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Text Vectorization</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">Vectorization Algorithm</label>
                 <select
                   name="text_vectorization"
                   value={selectedOptions.text_vectorization}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
                 >
-                  <option value="tfidf">TF-IDF</option>
-                  <option value="count">Count Vectorizer</option>
-                  <option value="embedding">Word Embeddings</option>
+                  <option value="tfidf">TF-IDF Vectorizer (Term Frequency)</option>
+                  <option value="count">Count Vectorizer (Bag of Words)</option>
                 </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Dimensionality Reduction */}
-        <div className="border-b pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900">Dimensionality Reduction</h4>
-            <Switch
-              checked={selectedOptions.dimensionality_reduction}
-              onChange={() => toggleOption('dimensionality_reduction')}
-              className={`${selectedOptions.dimensionality_reduction ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
-            >
-              <span className="sr-only">Enable dimensionality reduction</span>
-              <span
-                className={`${selectedOptions.dimensionality_reduction ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition`}
-              />
-            </Switch>
-          </div>
-          
-          {selectedOptions.dimensionality_reduction && (
-            <div className="ml-8 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reduction Method</label>
-                <select
-                  name="reduction_method"
-                  value={selectedOptions.reduction_method}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  <option value="pca">PCA</option>
-                  <option value="tsne">t-SNE</option>
-                  <option value="umap">UMAP</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Number of Components</label>
-                <input
-                  type="number"
-                  name="n_components"
-                  min="1"
-                  max="50"
-                  value={selectedOptions.n_components}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                />
               </div>
             </div>
           )}
         </div>
 
         {/* Class Imbalance */}
-        <div className="border-b pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900">Class Imbalance Handling</h4>
+        <div className="border-b border-white/[0.06] pb-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-white">Class Imbalance Handling</h4>
+              <p className="text-[11px] text-[#A4A4B8]">Resample rare classes using SMOTE synthetic oversampling</p>
+            </div>
             <Switch
               checked={selectedOptions.handle_imbalance}
               onChange={() => toggleOption('handle_imbalance')}
-              className={`${selectedOptions.handle_imbalance ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+              className={`${selectedOptions.handle_imbalance ? 'bg-[#8265FF]' : 'bg-[#171630] border border-white/[0.1]'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer`}
             >
               <span className="sr-only">Enable class imbalance handling</span>
               <span
@@ -474,106 +330,37 @@ export default function PreprocessingOption({ columns = [], onChange }) {
           </div>
           
           {selectedOptions.handle_imbalance && (
-            <div className="ml-8 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Imbalance Method</label>
-                <select
-                  name="imbalance_method"
-                  value={selectedOptions.imbalance_method}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  <option value="smote">SMOTE</option>
-                  <option value="adasyn">ADASYN</option>
-                  <option value="class_weight">Class Weights</option>
-                  <option value="undersample">Undersampling</option>
-                  <option value="oversample">Oversampling</option>
-                </select>
-              </div>
+            <div className="mt-3 p-4 bg-[#0D0D1B] rounded-xl border border-white/[0.06]">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">Imbalance Strategy</label>
+              <select
+                name="imbalance_method"
+                value={selectedOptions.imbalance_method}
+                onChange={handleInputChange}
+                className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
+              >
+                <option value="smote">SMOTE (Synthetic Minority Oversampling)</option>
+                <option value="adasyn">ADASYN</option>
+                <option value="class_weight">Class Weights</option>
+              </select>
             </div>
           )}
         </div>
 
-        {/* Column Selection */}
-        <div>
-          <h4 className="text-lg font-medium text-gray-900 mb-4">Column Selection</h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Numeric Columns</label>
-              <select
-                multiple
-                name="numeric_columns"
-                onChange={handleColumnSelection}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md h-auto"
-                size="5"
-              >
-                {columns.filter(col => col.type === 'number').map(col => (
-                  <option key={col.name} value={col.name}>{col.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Categorical Columns</label>
-              <select
-                multiple
-                name="categorical_columns"
-                onChange={handleColumnSelection}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md h-auto"
-                size="5"
-              >
-                {columns.filter(col => col.type === 'string' && !col.isText).map(col => (
-                  <option key={col.name} value={col.name}>{col.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Text Columns</label>
-              <select
-                multiple
-                name="text_columns"
-                onChange={handleColumnSelection}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md h-auto"
-                size="5"
-              >
-                {columns.filter(col => col.isText).map(col => (
-                  <option key={col.name} value={col.name}>{col.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Datetime Columns</label>
-              <select
-                multiple
-                name="datetime_columns"
-                onChange={handleColumnSelection}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md h-auto"
-                size="3"
-              >
-                {columns.filter(col => col.type === 'datetime').map(col => (
-                  <option key={col.name} value={col.name}>{col.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Target Column</label>
-              <select
-                name="target_column"
-                value={selectedOptions.target_column}
-                onChange={handleInputChange}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-              >
-                <option value="">Select target column</option>
-                {columns.map(col => (
-                  <option key={col.name} value={col.name}>{col.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* Target Column Selection */}
+        <div className="p-4 bg-[#0D0D1B] rounded-xl border border-white/[0.06]">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-white mb-2">Target Variable (For Supervised Imbalance / Target Encoding)</h4>
+          <select
+            name="target_column"
+            value={selectedOptions.target_column}
+            onChange={handleInputChange}
+            className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
+          >
+            <option value="">Select target column (optional)...</option>
+            {columns.map(col => {
+              const name = typeof col === 'object' ? col.name : col;
+              return <option key={name} value={name}>{name}</option>;
+            })}
+          </select>
         </div>
       </div>
     </div>

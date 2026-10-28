@@ -34,3 +34,7 @@ typing-inspection==0.4.0
 typing_extensions==4.13.2
 tzdata==2025.2
 uvicorn==0.34.2
+shap==0.54.1
+optuna==5.0.0
+
+reportlab==4.4.1

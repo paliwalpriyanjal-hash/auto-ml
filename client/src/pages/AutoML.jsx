@@ -9,6 +9,7 @@ import {
   FiCpu,
   FiBarChart2,
   FiCheckCircle,
+  FiAlertCircle
 } from "react-icons/fi";
 
 function AutoML() {
@@ -18,7 +19,6 @@ function AutoML() {
   const [columns, setColumns] = useState([]);
   const [activeStep, setActiveStep] = useState(1);
 
-  // Task & Target selection
   const [taskType, setTaskType] = useState("regression");
   const [targetColumn, setTargetColumn] = useState("");
 
@@ -28,12 +28,12 @@ function AutoML() {
   const [splitRatio, setSplitRatio] = useState("0.8");
   const [model, setModel] = useState("LinearRegression");
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [results, setResults] = useState(null);
 
   const handleTaskTypeChange = (newTask) => {
     setTaskType(newTask);
+    setError("");
+
     if (newTask === "classification") {
       setModel("RandomForestClassifier");
       setEncodingStrategy("onehot");
@@ -43,256 +43,196 @@ function AutoML() {
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setCsvFile(file);
-      setActiveStep(2);
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        Papa.parse(evt.target.result, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            const data = results.data;
-            const fields = results.meta.fields || [];
-            setColumns(fields);
-            setPreviewData(data.slice(0, 5));
-            if (fields.length > 0) {
-              setTargetColumn(fields[fields.length - 1]);
-            }
-          },
-        });
-      };
-      reader.readAsText(file);
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setError("");
+    setSubmit(false);
+    setCsvFile(null);
+    setPreviewData([]);
+    setColumns([]);
+    setTargetColumn("");
+    setActiveStep(1);
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setError("Please upload a valid CSV file.");
+      return;
     }
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim(),
+      complete: (result) => {
+        const fields = (result.meta.fields || []).filter(Boolean);
+        const data = result.data || [];
+
+        if (fields.length < 2) {
+          setError("The CSV must contain a header row and at least two columns.");
+          return;
+        }
+
+        setCsvFile(file);
+        setColumns(fields);
+        setPreviewData(data.slice(0, 5));
+        setTargetColumn(fields[fields.length - 1]);
+        setActiveStep(2);
+      },
+    });
   };
 
   const handleSubmit = () => {
-    if (taskType === "classification" && !targetColumn) {
-      setError("Please select a target column for classification.");
+    if (!csvFile) {
+      setError("Please choose a CSV file.");
       return;
     }
-    setLoading(true);
+
+    if (taskType === "classification" && !targetColumn) {
+      setError("Please choose a target column for classification.");
+      return;
+    }
+
     setError("");
-    setActiveStep(4);
     setSubmit(true);
+    setActiveStep(4);
   };
 
   const handleReset = () => {
     setSubmit(false);
-    setActiveStep(1);
-    setCsvFile(null);
-    setPreviewData([]);
-    setColumns([]);
-    setTaskType("regression");
-    setTargetColumn("");
-    setMissingStrategy("drop");
-    setEncodingStrategy("label");
-    setScaler("standard");
-    setSplitRatio("0.8");
-    setModel("LinearRegression");
-    setLoading(false);
-    setError("");
-    setResults(null);
+    setActiveStep(csvFile ? 2 : 1);
   };
 
   return (
-    <div className="app-container px-4 py-8 max-w-7xl mx-auto mt-20 min-h-screen">
-      <header className="app-header text-center mb-12">
-        <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-700 to-gray-400 mb-4">
-          AutoML Studio
-        </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Automated machine learning for everyone. Just upload your data and let
-          AI do the rest!
-        </p>
-      </header>
-
-      {/* Progress Steps */}
-      <div className="mb-12">
-        <div className="flex justify-between relative">
-          <div className="absolute top-1/2 left-0 right-0 h-1 bg-yellow-600 -z-10 transform -translate-y-1/2"></div>
-          {[1, 2, 3, 4].map((step) => (
-            <div key={step} className="flex flex-col items-center">
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-black font-bold 
-                ${
-                  activeStep >= step
-                    ? "bg-gradient-to-r from-yellow-500 to-gray-500 shadow-lg"
-                    : "bg-gray-300"
-                }`}
-              >
-                {activeStep > step ? <FiCheckCircle size={24} /> : step}
-              </div>
-              <span className="mt-2 text-sm font-medium text-gray-700">
-                {step === 1 && "Upload Data"}
-                {step === 2 && "Preview"}
-                {step === 3 && "Configure"}
-                {step === 4 && "Results"}
-              </span>
-            </div>
-          ))}
+    <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
+      
+      {/* Title */}
+      <div className="border-b border-white/[0.08] pb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8265FF] bg-[#8265FF]/10 px-2 py-0.5 rounded-full border border-[#8265FF]/20">
+            Pipeline Configuration
+          </span>
         </div>
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">Dedicated Model Training</h1>
+        <p className="text-sm text-[#A4A4B8] mt-1">
+          Train a specific algorithm with deterministic preprocessing, evaluate holdout metrics, and auto-register the fitted pipeline.
+        </p>
       </div>
 
-      {/* Step 1: File Upload */}
-      {activeStep === 1 && (
-        <section className="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8 text-center">
-          <div className="bg-yellow-50 p-6 rounded-lg border-2 border-dashed border-blue-200 mb-6">
-            <FiUpload className="mx-auto text-yellow-500" size={48} />
-            <h2 className="text-2xl font-semibold text-gray-800 mt-4 mb-2">
-              Upload Your Dataset
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Drag & drop your CSV file here or click to browse
-            </p>
-            <label className="cursor-pointer bg-yellow-600 hover:bg-orange-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200 inline-block">
-              Select File
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
+      {/* Progress Steps Header */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { num: 1, title: "1. Dataset Upload", icon: FiUpload },
+          { num: 2, title: "2. Task & Target", icon: FiSettings },
+          { num: 3, title: "3. Algorithm & Prep", icon: FiCpu },
+          { num: 4, title: "4. Training Results", icon: FiBarChart2 },
+        ].map(({ num, title, icon: Icon }) => (
+          <div
+            key={num}
+            className={`p-3.5 rounded-xl border flex items-center gap-2.5 text-xs font-semibold transition-all ${
+              activeStep >= num
+                ? "bg-[#171630] border-[#8265FF]/40 text-white"
+                : "bg-[#111126] border-white/[0.06] text-[#A4A4B8]"
+            }`}
+          >
+            <Icon className={activeStep >= num ? "text-[#8265FF]" : "text-[#A4A4B8]"} />
+            <span>{title}</span>
           </div>
-          <p className="text-gray-500 text-sm">
-            Supported formats: CSV, Excel. Max file size: 10MB
-          </p>
-        </section>
-      )}
+        ))}
+      </div>
 
-      {/* Step 2: Preview Data */}
-      {activeStep >= 2 && previewData.length > 0 && (
-        <section className="mb-10 bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <FiBarChart2 className="text-yellow-500 mr-2" size={20} />
-              <h2 className="text-xl font-semibold text-gray-800">
-                Data Preview
-              </h2>
-            </div>
-            <p className="text-gray-600 text-sm mt-1">
-              First 5 rows of your dataset
-            </p>
+      {/* Step 1: Upload */}
+      {!submit && (
+        <section className="bg-[#111126] p-6 rounded-2xl border border-white/[0.08] shadow-xl space-y-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <FiUpload className="text-[#8265FF]" /> Select Dataset File
+          </h3>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="block w-full text-xs text-[#A4A4B8] file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#8265FF]/15 file:text-[#8265FF] hover:file:bg-[#8265FF]/25 cursor-pointer bg-[#171630] p-2 rounded-xl border border-white/[0.08]"
+            />
+            {csvFile && (
+              <span className="text-xs text-emerald-400 flex items-center gap-1.5 shrink-0">
+                <FiCheckCircle /> {csvFile.name} loaded
+              </span>
+            )}
           </div>
-          <div className="overflow-x-auto p-4">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  {columns.map((col) => (
-                    <th
-                      key={col}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {previewData.map((row, idx) => (
-                  <tr
-                    key={idx}
-                    className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                  >
-                    {columns.map((col) => (
-                      <td
-                        key={col}
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
-                      >
-                        {row[col]}
-                      </td>
+
+          {previewData.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-white/[0.06] overflow-x-auto">
+              <p className="text-xs font-semibold text-[#A4A4B8] mb-2">Dataset Preview (First 5 Rows):</p>
+              <table className="min-w-full text-xs text-left divide-y divide-white/[0.06] border border-white/[0.06] rounded-xl overflow-hidden">
+                <thead className="bg-[#0D0D1B]">
+                  <tr>
+                    {columns.map((c) => (
+                      <th key={c} className="px-3 py-2 text-[#A4A4B8] font-medium">{c}</th>
                     ))}
                   </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.04]">
+                  {previewData.map((row, i) => (
+                    <tr key={i}>
+                      {columns.map((c) => (
+                        <td key={c} className="px-3 py-1.5 font-mono text-[#F7F7FC]">{row[c]}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Step 2: Task Selection */}
+      {!submit && csvFile && (
+        <section className="bg-[#111126] p-6 rounded-2xl border border-white/[0.08] shadow-xl space-y-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <FiSettings className="text-[#A855F7]" /> Task & Target Configuration
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
+                Task Type
+              </label>
+              <select
+                value={taskType}
+                onChange={(e) => handleTaskTypeChange(e.target.value)}
+                className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
+              >
+                <option value="regression">Regression (Predict numbers)</option>
+                <option value="classification">Classification (Predict classes)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
+                Target Column (y)
+              </label>
+              <select
+                value={targetColumn}
+                onChange={(e) => setTargetColumn(e.target.value)}
+                className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
+              >
+                <option value="">Select target column...</option>
+                {columns.map((c) => (
+                  <option key={c} value={c}>{c}</option>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="bg-gray-50 px-6 py-3 flex justify-end">
-            <button
-              onClick={() => setActiveStep(3)}
-              className="bg-yellow-600 hover:bg-orange-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200"
-            >
-              Continue to Configuration <span className="ml-1">→</span>
-            </button>
+              </select>
+            </div>
           </div>
         </section>
       )}
 
-      {/* Step 3: Configuration */}
-      {activeStep === 3 && (
-        <div className="space-y-6">
-          {/* Task Type and Target Column Selector */}
-          <section className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-              <FiSettings className="text-yellow-600 mr-2" /> Task & Target Configuration
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Task Type Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Machine Learning Task
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleTaskTypeChange("regression")}
-                    className={`py-3 px-4 rounded-lg border text-sm font-semibold transition duration-150 ${
-                      taskType === "regression"
-                        ? "bg-yellow-600 text-white border-yellow-600 shadow-md"
-                        : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
-                    }`}
-                  >
-                    Regression
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTaskTypeChange("classification")}
-                    className={`py-3 px-4 rounded-lg border text-sm font-semibold transition duration-150 ${
-                      taskType === "classification"
-                        ? "bg-yellow-600 text-white border-yellow-600 shadow-md"
-                        : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
-                    }`}
-                  >
-                    Classification
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {taskType === "regression"
-                    ? "Predict continuous numerical values (e.g. prices, scores, temperatures)."
-                    : "Predict discrete categorical classes (e.g. churn yes/no, disease type)."}
-                </p>
-              </div>
-
-              {/* Target Column Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target Column {taskType === "classification" && <span className="text-red-500 font-bold">*</span>}
-                </label>
-                <select
-                  value={targetColumn}
-                  onChange={(e) => setTargetColumn(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 bg-white"
-                >
-                  <option value="">-- Select Target Column --</option>
-                  {columns.map((col) => (
-                    <option key={col} value={col}>
-                      {col}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-2">
-                  {taskType === "classification"
-                    ? "Required for classification. The selected column will be predicted from the remaining features."
-                    : "Optional for regression (defaults to last column if not specified)."}
-                </p>
-              </div>
-            </div>
-          </section>
-
+      {/* Step 3: Model & Preprocessing Options */}
+      {!submit && csvFile && (
+        <>
+          <Model model={model} setModel={setModel} taskType={taskType} />
           <Preprocess
             missingStrategy={missingStrategy}
             setMissingStrategy={setMissingStrategy}
@@ -304,50 +244,27 @@ function AutoML() {
             setSplitRatio={setSplitRatio}
           />
 
-          <Model model={model} setModel={setModel} taskType={taskType} />
-
-          <div className="text-center mt-8">
+          <div className="flex justify-end">
             <button
-              className="bg-gradient-to-r from-yellow-600 to-gray-600 hover:from-orange-600 hover:to-gray-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-200 transform hover:scale-105"
               onClick={handleSubmit}
-              disabled={!csvFile || loading}
+              className="px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#8265FF] to-[#A855F7] hover:from-[#7152f8] hover:to-[#9333ea] text-white shadow-xl shadow-[#8265FF]/25 flex items-center gap-2 transition-all"
             >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Training Model...
-                </span>
-              ) : (
-                <>
-                  <FiCpu className="inline mr-2" />
-                  Run AutoML Analysis
-                </>
-              )}
+              <FiBarChart2 />
+              Start Training Pipeline
             </button>
           </div>
+        </>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+          <FiAlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Step 4: Results */}
+      {/* Step 4: Results Display */}
       {submit && (
         <Result
           csv={csvFile}
@@ -362,35 +279,6 @@ function AutoML() {
         />
       )}
 
-      {/* Error Handling */}
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-500"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Error occurred
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

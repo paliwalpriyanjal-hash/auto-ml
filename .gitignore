@@ -153,3 +153,18 @@ Pipfile.lock
 uv.lock
 poetry.lock
 pdm.lock
+
+# AutoVeyra generated runtime artifacts
+server/data/models/
+server/data/*.db
+server/data/*.sqlite
+server/backups/
+
+# Local runtime databases
+server/data/*.db
+server/data/*.sqlite
+server/data/*.sqlite3
+
+# Generated model artifacts and backups
+server/data/models/
+server/backups/
