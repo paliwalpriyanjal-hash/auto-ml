@@ -1,5 +1,6 @@
 annotated-types==0.7.0
 anyio==4.9.0
+bcrypt==5.0.0
 click==8.1.8
 colorama==0.4.6
 contourpy==1.3.2
@@ -21,6 +22,7 @@ pydantic==2.11.4
 pydantic_core==2.33.2
 pyparsing==3.2.3
 python-dateutil==2.9.0.post0
+python-jose==3.3.0
 python-multipart==0.0.20
 pytz==2025.2
 scikit-learn==1.6.1
@@ -36,5 +38,4 @@ tzdata==2025.2
 uvicorn==0.34.2
 shap==0.54.1
 optuna==5.0.0
-
 reportlab==4.4.1
