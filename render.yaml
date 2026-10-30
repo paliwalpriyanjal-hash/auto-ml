@@ -1,0 +1,63 @@
+# ============================================================================
+# AutoVeyra 2.0 — Render Blueprint Specification (100% Free Plan)
+# Provisions both Frontend (Static Site) and Backend (Python Web Service)
+# ============================================================================
+services:
+  # --------------------------------------------------------------------------
+  # Service A: AutoVeyra Frontend (React + Vite Single-Page Application)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: autoveyra-web
+    runtime: static
+    plan: free
+    branch: main
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://autoveyra-api.onrender.com
+      - key: VITE_API_URL
+        value: https://autoveyra-api.onrender.com
+
+  # --------------------------------------------------------------------------
+  # Service B: AutoVeyra Backend (FastAPI AutoML & ML Intelligence Service)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: autoveyra-api
+    runtime: python
+    plan: free
+    branch: main
+    rootDir: server
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: AUTOVEYRA_ENV
+        value: production
+      - key: AUTOVEYRA_AUTH_ENABLED
+        value: "false"
+      - key: AUTOVEYRA_JWT_SECRET
+        generateValue: true
+      - key: AUTOVEYRA_ALLOWED_ORIGINS
+        value: https://autoveyra-web.onrender.com,http://localhost:5173,http://127.0.0.1:5173
+      - key: AUTOVEYRA_MAX_UPLOAD_BYTES
+        value: "26214400"
+      - key: AUTOVEYRA_MAX_DATASET_ROWS
+        value: "50000"
+      - key: AUTOVEYRA_MAX_DATASET_COLS
+        value: "200"
+      - key: AUTOVEYRA_MAX_PREDICTION_ROWS
+        value: "2500"
+      - key: AUTOVEYRA_MAX_TUNING_TRIALS
+        value: "25"
+      - key: AUTOVEYRA_MAX_EXPLAIN_SAMPLES
+        value: "200"
+      - key: AUTOVEYRA_MODEL_CACHE_SIZE
+        value: "4"
+      - key: PYTHON_VERSION
+        value: 3.11.9

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBase } from '../utils/api';
 
 export default function AdvancedCleaningResult({ csvFile }) {
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ export default function AdvancedCleaningResult({ csvFile }) {
       const formData = new FormData();
       formData.append('file', csvFile);
 
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiBase = getApiBase();
 
       try {
         const response = await fetch(`${apiBase}/api/clean`, {

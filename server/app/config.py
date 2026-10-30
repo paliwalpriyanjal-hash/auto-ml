@@ -45,14 +45,17 @@ class Settings:
     # CORS Allowed Origins
     @property
     def ALLOWED_ORIGINS(self) -> List[str]:
-        raw = os.getenv("AUTOVEYRA_ALLOWED_ORIGINS")
-        if raw:
-            return [origin.strip() for origin in raw.split(",") if origin.strip()]
-        return [
+        default_origins = [
             "http://localhost:5173",
             "http://127.0.0.1:5173",
             "https://auto-ml-studio-phi.vercel.app",
+            "https://autoveyra-web.onrender.com",
         ]
+        raw = os.getenv("AUTOVEYRA_ALLOWED_ORIGINS")
+        if raw:
+            custom_origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+            return list(dict.fromkeys(default_origins + custom_origins))
+        return default_origins
 
 
 settings = Settings()

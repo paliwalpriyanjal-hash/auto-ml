@@ -13,13 +13,28 @@ from sklearn.pipeline import Pipeline
 
 from app.services.model_registry_service import load_model, _json_safe
 
-# Optional SHAP import with clear capability flag
-try:
-    import shap
-    SHAP_AVAILABLE = True
-except ImportError:
-    shap = None
-    SHAP_AVAILABLE = False
+import importlib.util
+
+# Lazy SHAP loader to preserve startup memory and fast boots on cloud containers
+def _is_shap_available() -> bool:
+    return importlib.util.find_spec("shap") is not None
+
+def _get_shap():
+    try:
+        import shap
+        return shap
+    except ImportError:
+        return None
+
+class _LazyShapProxy:
+    def __getattr__(self, name):
+        s = _get_shap()
+        if s is None:
+            raise ImportError("SHAP is not installed in the environment.")
+        return getattr(s, name)
+
+shap = _LazyShapProxy()
+SHAP_AVAILABLE = _is_shap_available()
 
 
 # Supported candidate models mapping

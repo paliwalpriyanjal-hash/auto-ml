@@ -41,6 +41,88 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+
+@app.on_event("startup")
+def init_application_state():
+    """Ensure runtime directories and SQLite database schemas exist upon fresh container boot."""
+    data_dir = Path(__file__).resolve().parent.parent / "data"
+    subdirs = [
+        "models",
+        "model_artifacts",
+        "datasets",
+        "cleaned_datasets",
+        "feature_datasets",
+        "reports",
+        "eda_profiles",
+        "eval_artifacts",
+        "tuning_artifacts",
+    ]
+    data_dir.mkdir(parents=True, exist_ok=True)
+    for sub in subdirs:
+        (data_dir / sub).mkdir(parents=True, exist_ok=True)
+
+    # Initialize all database tables safely and idempotently
+    try:
+        from app.services.auth_service import init_auth_db
+        init_auth_db()
+    except Exception as exc:
+        logging.warning(f"Auth DB init warning: {exc}")
+
+    try:
+        from app.services.monitoring_service import init_monitoring_db
+        init_monitoring_db()
+    except Exception as exc:
+        logging.warning(f"Monitoring DB init warning: {exc}")
+
+    try:
+        from app.services.model_registry_service import init_model_registry
+        init_model_registry()
+    except Exception as exc:
+        logging.warning(f"Model registry init warning: {exc}")
+
+    try:
+        from app.services.experiment_service import init_experiment_db
+        init_experiment_db()
+    except Exception as exc:
+        logging.warning(f"Experiment DB init warning: {exc}")
+
+    try:
+        from app.services.feature_service import init_feature_db
+        init_feature_db()
+    except Exception as exc:
+        logging.warning(f"Feature DB init warning: {exc}")
+
+    try:
+        from app.services.report_service import init_report_db
+        init_report_db()
+    except Exception as exc:
+        logging.warning(f"Report DB init warning: {exc}")
+
+    try:
+        from app.services.project_report_service import init_project_report_db
+        init_project_report_db()
+    except Exception as exc:
+        logging.warning(f"Project Report DB init warning: {exc}")
+
+    try:
+        from app.services.eda_service import init_eda_db
+        init_eda_db()
+    except Exception as exc:
+        logging.warning(f"EDA DB init warning: {exc}")
+
+    try:
+        from app.services.assistant_service import init_workspace_projects_db
+        init_workspace_projects_db()
+    except Exception as exc:
+        logging.warning(f"Assistant DB init warning: {exc}")
+
+    try:
+        from app.services.tuning_service import init_tuning_db
+        init_tuning_db()
+    except Exception as exc:
+        logging.warning(f"Tuning DB init warning: {exc}")
+
+
 # Correlation ID and Request Metrics Middleware
 @app.middleware("http")
 async def correlation_and_metrics_middleware(request: Request, call_next):

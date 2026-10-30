@@ -4,7 +4,7 @@
 export const DEFAULT_API_URL = "http://127.0.0.1:8000";
 
 export function getApiBase() {
-  const configured = import.meta.env.VITE_API_URL;
+  const configured = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   return (configured || DEFAULT_API_URL).replace(/\/+$/, "");
 }
 

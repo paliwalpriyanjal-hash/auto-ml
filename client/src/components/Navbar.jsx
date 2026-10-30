@@ -75,15 +75,34 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [backendOnline, setBackendOnline] = useState(null);
+  const [showDemoBanner, setShowDemoBanner] = useState(() => {
+    try {
+      return sessionStorage.getItem("autoveyra_demo_banner_dismissed") !== "true";
+    } catch {
+      return true;
+    }
+  });
   const location = useLocation();
   const navRef = useRef(null);
+
+  const dismissDemoBanner = () => {
+    setShowDemoBanner(false);
+    try {
+      sessionStorage.setItem("autoveyra_demo_banner_dismissed", "true");
+    } catch (err) {
+      console.debug("Failed to store demo banner state in sessionStorage", err);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
     const checkHealth = async () => {
       try {
-        const res = await fetch(`${getApiBase()}/test`, { method: "GET" });
-        if (isMounted) setBackendOnline(res.ok);
+        let res = await fetch(`${getApiBase()}/health`, { method: "GET" }).catch(() => null);
+        if (!res || !res.ok) {
+          res = await fetch(`${getApiBase()}/test`, { method: "GET" }).catch(() => null);
+        }
+        if (isMounted) setBackendOnline(Boolean(res && res.ok));
       } catch {
         if (isMounted) setBackendOnline(false);
       }
@@ -121,6 +140,31 @@ export default function Navbar() {
       ref={navRef}
       className="fixed top-0 left-0 right-0 z-50 bg-[#070711]/90 backdrop-blur-xl border-b border-white/[0.08] transition-all"
     >
+      {/* Ephemeral Demo Cloud Banner */}
+      {showDemoBanner && (
+        <div className="bg-gradient-to-r from-[#8265FF]/20 via-[#4E75FF]/20 to-[#8265FF]/20 border-b border-[#8265FF]/30 px-3 py-1.5 text-xs text-[#C5C8D8] flex items-center justify-between gap-2">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 flex-1 justify-center text-center">
+            <span className="font-semibold text-[#8265FF] inline-flex items-center gap-1">
+              ⚡ Demo Environment:
+            </span>
+            <span className="hidden sm:inline">
+              Running on free cloud tier. Backend hibernates after inactivity (~50s cold start). Filesystem storage is ephemeral; models and datasets reset upon redeploy.
+            </span>
+            <span className="sm:hidden">
+              Free cloud demo (ephemeral storage; cold starts take ~50s).
+            </span>
+          </div>
+          <button
+            onClick={dismissDemoBanner}
+            className="text-white/60 hover:text-white px-1.5 py-0.5 text-xs rounded hover:bg-white/10 transition-colors"
+            title="Dismiss notice"
+            aria-label="Dismiss notice"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         
         {/* Brand Logo */}
