@@ -61,4 +61,4 @@ services:
       - key: AUTOVEYRA_MODEL_CACHE_SIZE
         value: "4"
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: 3.12.8

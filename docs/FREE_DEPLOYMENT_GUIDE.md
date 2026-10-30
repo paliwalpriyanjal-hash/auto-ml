@@ -24,7 +24,7 @@ With this setup:
   | Render Static Site       |                            | Render Web Service       |
   | `autoveyra-web`          |                            | `autoveyra-api`          |
   | React 19 + Vite 6        |                            | FastAPI + Uvicorn        |
-  | SPA Rewrite -> index.html|                            | Python 3.11 Free Tier    |
+  | SPA Rewrite -> index.html|                            | Python 3.12 Free Tier    |
   | VITE_API_BASE_URL        |                            | Port: $PORT (0.0.0.0)    |
   +--------------------------+                            +-------------+------------+
                                                                         |
@@ -138,7 +138,7 @@ If the default service name `autoveyra-api` is already claimed on Render and Ren
 | `AUTOVEYRA_MAX_DATASET_COLS` | `200` | Free-tier column width ceiling |
 | `AUTOVEYRA_MAX_TUNING_TRIALS`| `25` | Maximum Optuna Bayesian trials on free compute |
 | `AUTOVEYRA_MAX_EXPLAIN_SAMPLES`| `200` | Maximum permutation / SHAP evaluation sample size |
-| `PYTHON_VERSION` | `3.11.9` | Optimized Python runtime on Linux |
+| `PYTHON_VERSION` | `3.12.8` | Optimized Python 3.12 runtime on Linux (with full SHAP and NumPy 2.x support) |
 
 ### Optional Admin Credentials (When `AUTOVEYRA_AUTH_ENABLED=true`)
 
