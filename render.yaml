@@ -5,11 +5,11 @@
 services:
   # --------------------------------------------------------------------------
   # Service A: AutoVeyra Frontend (React + Vite Single-Page Application)
+  # Static sites on Render are CDN-hosted, always free, and have no plan field.
   # --------------------------------------------------------------------------
   - type: web
     name: autoveyra-web
     runtime: static
-    plan: free
     branch: main
     rootDir: client
     buildCommand: npm ci && npm run build
@@ -26,6 +26,7 @@ services:
 
   # --------------------------------------------------------------------------
   # Service B: AutoVeyra Backend (FastAPI AutoML & ML Intelligence Service)
+  # Free containerized Python service on Render's free compute tier.
   # --------------------------------------------------------------------------
   - type: web
     name: autoveyra-api
