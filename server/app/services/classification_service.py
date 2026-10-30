@@ -17,10 +17,18 @@ from sklearn.preprocessing import (
     RobustScaler,
     OneHotEncoder,
 )
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    ExtraTreesClassifier,
+    HistGradientBoostingClassifier,
+    GradientBoostingClassifier,
+)
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
@@ -31,6 +39,7 @@ from sklearn.metrics import (
     log_loss,
     confusion_matrix,
 )
+from app.services.ml_intelligence_service import generate_training_diagnostics
 
 
 # ---------------------------------------------------------
@@ -444,12 +453,69 @@ def _get_classifier(model_name: str):
             "ExtraTreesClassifier",
         )
 
+    if name in {
+        "histgradientboosting",
+        "histgradientboostingclassifier",
+        "hist_gradient_boosting",
+        "hgb",
+    }:
+        return (
+            HistGradientBoostingClassifier(
+                random_state=42,
+            ),
+            "HistGradientBoostingClassifier",
+        )
+
+    if name in {
+        "gradientboosting",
+        "gradientboostingclassifier",
+        "gradient_boosting",
+        "gb",
+        "gbm",
+    }:
+        return (
+            GradientBoostingClassifier(
+                random_state=42,
+            ),
+            "GradientBoostingClassifier",
+        )
+
+    if name in {
+        "kneighbors",
+        "kneighborsclassifier",
+        "knn",
+        "k_neighbors",
+    }:
+        return (
+            KNeighborsClassifier(
+                n_neighbors=5,
+            ),
+            "KNeighborsClassifier",
+        )
+
+    if name in {
+        "svc",
+        "svm",
+        "supportvectormachine",
+        "supportvectorclassifier",
+    }:
+        return (
+            SVC(
+                probability=True,
+                class_weight="balanced",
+                random_state=42,
+            ),
+            "SVC",
+        )
+
     raise HTTPException(
         status_code=400,
         detail=(
             f"Unsupported classification model '{model_name}'. "
             "Choose LogisticRegression, DecisionTreeClassifier, "
-            "RandomForestClassifier, or ExtraTreesClassifier."
+            "RandomForestClassifier, ExtraTreesClassifier, "
+            "HistGradientBoostingClassifier, GradientBoostingClassifier, "
+            "KNeighborsClassifier, or SVC."
         ),
     )
 
@@ -746,6 +812,62 @@ async def train_classification_service(
             ),
         )
 
+    # -----------------------------------------------------
+    # Cross-validation on training folds only (Leak-Free)
+    # -----------------------------------------------------
+    cv_metrics: Dict[str, Any] = {}
+    train_class_counts = y_train.value_counts()
+    min_train_class_cnt = int(train_class_counts.min()) if not train_class_counts.empty else 0
+    max_feasible_folds = min(5, min_train_class_cnt)
+
+    if max_feasible_folds >= 2:
+        try:
+            skf = StratifiedKFold(n_splits=max_feasible_folds, shuffle=True, random_state=42)
+            fold_accs = []
+            fold_bal_accs = []
+            fold_f1s = []
+
+            for fold_train_idx, fold_val_idx in skf.split(X_train, y_train):
+                cv_pipe = clone(pipeline)
+                X_tr = X_train.iloc[fold_train_idx]
+                y_tr = y_train.iloc[fold_train_idx]
+                X_va = X_train.iloc[fold_val_idx]
+                y_va = y_train.iloc[fold_val_idx]
+
+                cv_pipe.fit(X_tr, y_tr)
+                val_preds = cv_pipe.predict(X_va)
+
+                fold_accs.append(accuracy_score(y_va, val_preds))
+                fold_bal_accs.append(balanced_accuracy_score(y_va, val_preds))
+                fold_f1s.append(f1_score(y_va, val_preds, average="macro", zero_division=0))
+
+            cv_metrics = {
+                "cv_folds": max_feasible_folds,
+                "accuracy_mean": _safe_float(np.mean(fold_accs)),
+                "accuracy_std": _safe_float(np.std(fold_accs)),
+                "balanced_accuracy_mean": _safe_float(np.mean(fold_bal_accs)),
+                "balanced_accuracy_std": _safe_float(np.std(fold_bal_accs)),
+                "f1_macro_mean": _safe_float(np.mean(fold_f1s)),
+                "f1_macro_std": _safe_float(np.std(fold_f1s)),
+            }
+        except Exception as cv_exc:
+            warnings.append(f"Training cross-validation skipped: {str(cv_exc)}")
+
+    # -----------------------------------------------------
+    # Training metrics (to assess overfitting gap)
+    # -----------------------------------------------------
+    training_metrics: Dict[str, Any] = {}
+    try:
+        train_preds = pipeline.predict(X_train)
+        training_metrics = {
+            "accuracy": _safe_float(accuracy_score(y_train, train_preds)),
+            "balanced_accuracy": _safe_float(balanced_accuracy_score(y_train, train_preds)),
+            "f1_macro": _safe_float(f1_score(y_train, train_preds, average="macro", zero_division=0)),
+            "f1_weighted": _safe_float(f1_score(y_train, train_preds, average="weighted", zero_division=0)),
+        }
+    except Exception:
+        training_metrics = {}
+
     try:
         predictions = pipeline.predict(X_test)
 
@@ -968,6 +1090,43 @@ async def train_classification_service(
     ]
 
     # -----------------------------------------------------
+    # Class imbalance evaluation & Diagnostics
+    # -----------------------------------------------------
+    class_series = df[target_column].value_counts()
+    majority_count = int(class_series.iloc[0]) if len(class_series) > 0 else 1
+    minority_count = int(class_series.iloc[-1]) if len(class_series) > 0 else 1
+    imbalance_ratio = round(majority_count / max(1, minority_count), 2)
+    if imbalance_ratio >= 10.0:
+        imbalance_severity = "severe"
+    elif imbalance_ratio >= 3.0:
+        imbalance_severity = "moderate"
+    else:
+        imbalance_severity = "balanced"
+
+    imbalance_info = {
+        "majority_count": majority_count,
+        "minority_count": minority_count,
+        "imbalance_ratio": imbalance_ratio,
+        "imbalance_severity": imbalance_severity,
+        "applied_strategy": "balanced_class_weight",
+        "description": f"Class ratio is {imbalance_ratio}:1 ({imbalance_severity}). Cost-sensitive balanced weights applied to penalize minority misclassifications.",
+    }
+
+    holdout_acc = metrics.get("accuracy") or 0.0
+    train_acc = training_metrics.get("accuracy") or 0.0
+    overfitting_gap = round(float(train_acc - holdout_acc), 4)
+
+    diagnostics = generate_training_diagnostics(
+        task_type="classification",
+        train_score=train_acc,
+        val_score=cv_metrics.get("accuracy_mean") if cv_metrics else holdout_acc,
+        primary_metric="accuracy" if imbalance_severity == "balanced" else "f1_macro",
+        imbalance_info=imbalance_info,
+        n_samples=len(df),
+        n_features=len(feature_columns),
+    )
+
+    # -----------------------------------------------------
     # Construct JSON-compatible response
     # -----------------------------------------------------
 
@@ -981,6 +1140,11 @@ async def train_classification_service(
         "encoding_strategy": encoding,
         "split_ratio": split_ratio,
         "metrics": metrics,
+        "training_metrics": training_metrics,
+        "cv_metrics": cv_metrics,
+        "overfitting_gap": overfitting_gap,
+        "imbalance_info": imbalance_info,
+        "diagnostics": diagnostics,
         "confusion_matrix": confusion_data,
         "warnings": warnings,
         "columns": feature_columns,

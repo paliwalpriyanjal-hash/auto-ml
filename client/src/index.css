@@ -2,22 +2,41 @@
 @import 'tailwindcss';
 
 :root {
+  /* Surface hierarchy */
   --bg-base: #070711;
-  --bg-secondary: #0D0D1B;
-  --bg-card: #111126;
-  --bg-elevated: #171630;
+  --bg-subtle: #0B0B16;
+  --bg-card: #0F0F22;
+  --bg-elevated: #16152F;
+  --bg-hover: #1D1C3C;
+
+  /* Accent palette */
   --accent-primary: #8265FF;
   --accent-secondary: #A855F7;
-  --text-primary: #F7F7FC;
-  --text-secondary: #A4A4B8;
-  --border-subtle: rgba(255, 255, 255, 0.08);
+  --accent-glow: rgba(130, 101, 255, 0.25);
+
+  /* Typography tokens */
+  --text-primary: #F8F9FD;
+  --text-secondary: #9FA2B6;
+  --text-muted: #64677E;
+
+  /* Borders & Separators */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-accent: rgba(130, 101, 255, 0.35);
+
+  /* Status Colors */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --info: #3B82F6;
 }
 
 body {
   background-color: #070711;
-  color: #F7F7FC;
+  color: #F8F9FD;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
+  letter-spacing: -0.01em;
 }
 
 code, pre, .font-mono {
@@ -26,8 +45,8 @@ code, pre, .font-mono {
 
 /* Custom premium scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -35,8 +54,8 @@ code, pre, .font-mono {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #171630;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #16152F;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 9999px;
 }
 
@@ -44,7 +63,19 @@ code, pre, .font-mono {
   background: #8265FF;
 }
 
-/* Glass & Glow utilities */
+/* Premium Surface & Glow utilities */
+.surface-card {
+  background: #0F0F22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+}
+
+.surface-elevated {
+  background: #16152F;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+}
+
 .glow-purple {
   box-shadow: 0 0 35px -5px rgba(130, 101, 255, 0.35);
 }
@@ -58,13 +89,13 @@ code, pre, .font-mono {
 }
 
 .card-gradient {
-  background: linear-gradient(180deg, rgba(23, 22, 48, 0.7) 0%, rgba(17, 17, 38, 0.85) 100%);
+  background: linear-gradient(180deg, rgba(22, 21, 47, 0.8) 0%, rgba(15, 15, 34, 0.95) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
 }
 
 .card-gradient:hover {
-  border-color: rgba(130, 101, 255, 0.3);
+  border-color: rgba(130, 101, 255, 0.35);
 }
 
 .text-gradient {
@@ -77,4 +108,10 @@ code, pre, .font-mono {
   background: linear-gradient(135deg, #8265FF 0%, #C084FC 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Focus and accessibility styles */
+:focus-visible {
+  outline: 2px solid #8265FF;
+  outline-offset: 2px;
 }

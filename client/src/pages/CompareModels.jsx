@@ -14,6 +14,10 @@ import {
   FiAlertCircle
 } from "react-icons/fi";
 import { getApiBase } from "../utils/api";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
 
 const CLASSIFICATION_METRICS = [
   { value: "f1_macro", label: "F1 Macro", higherIsBetter: true },
@@ -136,19 +140,17 @@ function CompareModels() {
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
-      
-      {/* Title */}
-      <div className="border-b border-white/[0.08] pb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8265FF] bg-[#8265FF]/10 px-2 py-0.5 rounded-full border border-[#8265FF]/20">
-            Automated Cross-Validation Benchmarking
-          </span>
-        </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Multi-Algorithm Comparison</h1>
-        <p className="text-sm text-[#A4A4B8] mt-1">
-          Train and evaluate multiple candidate models simultaneously. The highest-ranking model is verified on holdout data and registered automatically.
-        </p>
-      </div>
+      {/* Universal Page Header */}
+      <PageHeader
+        category="Machine Learning"
+        title="Multi-Algorithm Comparison"
+        subtitle="Train and evaluate multiple candidate models simultaneously with automated cross-validation. The highest-ranking model is verified on holdout data and registered automatically."
+        badge={
+          <Badge variant="violet" size="sm">
+            Cross-Validation Benchmarking
+          </Badge>
+        }
+      />
 
       {/* Progress Steps Header */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

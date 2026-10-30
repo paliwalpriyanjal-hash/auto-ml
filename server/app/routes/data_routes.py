@@ -11,6 +11,8 @@ from app.services.comparison_service import compare_models_service
 from app.services.adanceCleaning import AdvancedDataCleaner
 from app.services.model_registry_service import register_model
 from app.services.experiment_service import create_experiment
+from app.services.ml_intelligence_service import analyze_dataset_intelligence
+from app.utils.security import safe_read_csv
 
 
 router = APIRouter()
@@ -75,25 +77,49 @@ async def train(
         )
 
         if normalized_task == "regression":
-            result = await train_model_service(
-                file,
-                model,
-                scaler,
-                splitRatio,
-                missing,
-                encoding,
+            train_output = await train_model_service(
+                file=file,
+                model=model,
+                scaler=scaler,
+                split_ratio=splitRatio,
+                missing=missing,
+                encoding=encoding,
+                target_column=target_column,
+                return_pipeline=True,
             )
 
-            # Keep existing regression behavior unchanged.
+            if isinstance(train_output, tuple):
+                result, fitted_pipeline = train_output
+                try:
+                    registered_model = register_model(
+                        pipeline=fitted_pipeline,
+                        model_name=(
+                            f"{file.filename.rsplit('.', 1)[0]} "
+                            f"- {result.get('model_type', model)}"
+                        ),
+                        task_type="regression",
+                        model_type=result.get("model_type", model),
+                        dataset_name=file.filename,
+                        target_column=result.get("target_column", target_column or "target"),
+                        feature_columns=result.get("columns", []),
+                        metrics=result.get("metrics", {}),
+                    )
+                    result["registered_model"] = registered_model
+                except Exception as reg_exc:
+                    print(f"Regression model registration skipped: {reg_exc}")
+            else:
+                result = train_output
+
+            # Save experiment safely
             save_experiment_safely(
-                experiment_name=f"{file.filename} - {model}",
+                experiment_name=f"{file.filename} - {result.get('model_type', model)}",
                 task_type="regression",
                 dataset_name=file.filename,
-                target_column=target_column,
-                model_type=model,
-                scaler_type=scaler,
-                missing_strategy=missing,
-                encoding_strategy=encoding,
+                target_column=result.get("target_column", target_column),
+                model_type=result.get("model_type", model),
+                scaler_type=result.get("scaler_type", scaler),
+                missing_strategy=result.get("missing_strategy", missing),
+                encoding_strategy=result.get("encoding_strategy", encoding),
                 split_ratio=splitRatio,
                 metrics=result.get("metrics", {}),
                 result=result,
@@ -196,6 +222,31 @@ async def clean_data(
 
 
 # ---------------------------------------------------------
+# Dataset Intelligence & Pre-training Analysis
+# ---------------------------------------------------------
+
+@router.post("/train/analyze")
+@router.post("/api/analyze-dataset")
+async def analyze_dataset_endpoint(
+    file: UploadFile = File(...),
+    target_column: Optional[str] = Form(None),
+):
+    """
+    Intelligent pre-training dataset analysis.
+    Computes dimensions, missingness, duplicates, data types, class imbalance,
+    collinear pairs, outliers, potential target leakage, and actionable suggestions.
+    """
+    try:
+        df = await safe_read_csv(file)
+        analysis = analyze_dataset_intelligence(df, target_column=target_column)
+        return JSONResponse(content=analysis)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+# ---------------------------------------------------------
 # Model comparison + best model registration
 # ---------------------------------------------------------
 
@@ -209,6 +260,8 @@ async def compare(
     missing: str = Form("median"),
     encoding: str = Form("onehot"),
     ranking_metric: Optional[str] = Form(None),
+    suite: Optional[str] = Form("standard"),
+    models: Optional[str] = Form(None),
 ):
     try:
         normalized_task = task_type.strip().lower()
@@ -223,6 +276,8 @@ async def compare(
             missing=missing,
             encoding=encoding,
             ranking_metric=ranking_metric,
+            suite=suite,
+            models=models,
             return_pipeline=True,
         )
 

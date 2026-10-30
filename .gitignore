@@ -168,3 +168,4 @@ server/data/*.sqlite3
 # Generated model artifacts and backups
 server/data/models/
 server/backups/
+server/data/

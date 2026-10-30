@@ -25,6 +25,11 @@ import {
   Info
 } from "lucide-react";
 import { getApiBase } from "../utils/api";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import MetricCard from "../components/ui/MetricCard";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
 
 export default function HyperparameterTuning() {
   const [searchParams] = useSearchParams();
@@ -263,36 +268,33 @@ export default function HyperparameterTuning() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 space-y-10">
-      
-      {/* Workspace Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/[0.08] pb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8265FF] bg-[#8265FF]/10 px-2.5 py-0.5 rounded-full border border-[#8265FF]/20 flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-[#A855F7]" />
-              Optuna Optimization Engine
-            </span>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 space-y-8">
+      {/* Universal Page Header */}
+      <PageHeader
+        category="Experiments"
+        title="Hyperparameter Tuning Studio"
+        subtitle="Bayesian Tree-structured Parzen Estimator (TPE) hyperparameter search with fold-isolated preprocessing, cross-validation scoring, and unbiased holdout evaluation."
+        badge={
+          <div className="flex items-center gap-2">
+            <Badge variant="violet" size="sm">
+              <Sparkles className="w-3 h-3 text-[#A855F7] mr-1 inline" /> Optuna TPE
+            </Badge>
+            <Badge variant="success" size="sm">
               Zero-Leakage Folds
-            </span>
+            </Badge>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Hyperparameter Tuning Workspace</h1>
-          <p className="text-sm text-[#A4A4B8] mt-1 max-w-2xl">
-            Bayesian Tree-structured Parzen Estimator (TPE) hyperparameter search with fold-isolated preprocessing, cross-validation scoring, and unbiased holdout evaluation.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
+        }
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Clock}
             onClick={() => setShowHistory(!showHistory)}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#171630] hover:bg-[#1f1e40] text-white border border-white/[0.08] transition-all flex items-center gap-2"
           >
-            <Clock className="w-3.5 h-3.5 text-[#8265FF]" />
             Tuning History ({historyRuns.length})
-          </button>
-        </div>
-      </div>
+          </Button>
+        }
+      />
 
       {/* History Drawer Modal */}
       {showHistory && (

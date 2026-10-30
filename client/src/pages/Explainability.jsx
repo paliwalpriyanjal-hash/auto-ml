@@ -20,6 +20,10 @@ import {
   Cpu
 } from "lucide-react";
 import { getApiBase, formatMetric } from "../utils/api";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
 
 export default function Explainability() {
   const [searchParams] = useSearchParams();
@@ -310,41 +314,39 @@ export default function Explainability() {
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
-      
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8265FF] bg-[#8265FF]/10 px-2 py-0.5 rounded-full border border-[#8265FF]/20 flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Explainable AI Workspace
-            </span>
-          </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Model Explainability & Auditing</h1>
-          <p className="text-sm text-[#A4A4B8] mt-1">
-            Permutation importance, game-theoretic SHAP attributions, and local prediction waterfalls.
-          </p>
-        </div>
-
-        {explanationResult && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleExportJSON}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#171630] hover:bg-[#1f1e40] text-white border border-white/[0.08] flex items-center gap-1.5 transition-all shadow-sm"
-            >
-              <Download className="w-3.5 h-3.5 text-[#8265FF]" />
-              Export JSON
-            </button>
-            <button
-              onClick={handleExportCSV}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#171630] hover:bg-[#1f1e40] text-white border border-white/[0.08] flex items-center gap-1.5 transition-all shadow-sm"
-            >
-              <FileText className="w-3.5 h-3.5 text-emerald-400" />
-              Export CSV
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Universal Page Header */}
+      <PageHeader
+        category="Machine Learning"
+        title="Model Explainability & Auditing"
+        subtitle="Permutation importance, game-theoretic SHAP attributions, and local prediction waterfalls with full feature interaction fidelity."
+        badge={
+          <Badge variant="violet" size="sm">
+            <ShieldCheck className="w-3.5 h-3.5 mr-1 inline" /> Explainable AI
+          </Badge>
+        }
+        actions={
+          explanationResult && (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={Download}
+                onClick={handleExportJSON}
+              >
+                Export JSON
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={Download}
+                onClick={handleExportCSV}
+              >
+                Export CSV
+              </Button>
+            </>
+          )
+        }
+      />
 
       {/* Model Selection & Methodology Configuration */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

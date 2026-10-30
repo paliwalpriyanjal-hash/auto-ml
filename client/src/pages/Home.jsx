@@ -79,10 +79,10 @@ export default function Home() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
               <button
-                onClick={() => navigate("/automl")}
+                onClick={() => navigate("/workspace")}
                 className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#8265FF] to-[#A855F7] hover:from-[#7152f8] hover:to-[#9333ea] text-white shadow-xl shadow-[#8265FF]/25 hover:shadow-[#8265FF]/40 transition-all flex items-center justify-center gap-2 group"
               >
-                Start Building
+                Start Guided Project
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </button>
 

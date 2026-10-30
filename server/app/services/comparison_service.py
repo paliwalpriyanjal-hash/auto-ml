@@ -35,13 +35,26 @@ from sklearn.preprocessing import (
     RobustScaler,
     OneHotEncoder,
 )
-from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.linear_model import (
+    LinearRegression,
+    LogisticRegression,
+    Ridge,
+    Lasso,
+    ElasticNet,
+)
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.ensemble import (
     RandomForestRegressor,
     RandomForestClassifier,
     ExtraTreesClassifier,
+    ExtraTreesRegressor,
+    HistGradientBoostingClassifier,
+    HistGradientBoostingRegressor,
+    GradientBoostingClassifier,
+    GradientBoostingRegressor,
 )
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.svm import SVC, SVR
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
@@ -108,6 +121,24 @@ CLASSIFICATION_MODELS: Dict[str, Any] = {
     ),
 }
 
+EXPANDED_CLASSIFICATION_MODELS: Dict[str, Any] = {
+    **CLASSIFICATION_MODELS,
+    "HistGradientBoostingClassifier": lambda rs: HistGradientBoostingClassifier(
+        random_state=rs,
+    ),
+    "GradientBoostingClassifier": lambda rs: GradientBoostingClassifier(
+        random_state=rs,
+    ),
+    "KNeighborsClassifier": lambda rs: KNeighborsClassifier(
+        n_neighbors=5,
+    ),
+    "SVC": lambda rs: SVC(
+        probability=True,
+        class_weight="balanced",
+        random_state=rs,
+    ),
+}
+
 REGRESSION_MODELS: Dict[str, Any] = {
     "LinearRegression": lambda rs: LinearRegression(),
     "DecisionTree": lambda rs: DecisionTreeRegressor(
@@ -118,6 +149,28 @@ REGRESSION_MODELS: Dict[str, Any] = {
         n_jobs=1,
         random_state=rs,
     ),
+}
+
+EXPANDED_REGRESSION_MODELS: Dict[str, Any] = {
+    **REGRESSION_MODELS,
+    "Ridge": lambda rs: Ridge(random_state=rs),
+    "Lasso": lambda rs: Lasso(random_state=rs),
+    "ElasticNet": lambda rs: ElasticNet(random_state=rs),
+    "ExtraTrees": lambda rs: ExtraTreesRegressor(
+        n_estimators=100,
+        n_jobs=1,
+        random_state=rs,
+    ),
+    "HistGradientBoosting": lambda rs: HistGradientBoostingRegressor(
+        random_state=rs,
+    ),
+    "GradientBoosting": lambda rs: GradientBoostingRegressor(
+        random_state=rs,
+    ),
+    "KNeighborsRegressor": lambda rs: KNeighborsRegressor(
+        n_neighbors=5,
+    ),
+    "SVR": lambda rs: SVR(),
 }
 
 CLASSIFICATION_RANKING_METRICS = {
@@ -436,6 +489,8 @@ async def compare_models_service(
     missing: str,
     encoding: str,
     ranking_metric: Optional[str] = None,
+    suite: Optional[str] = "standard",
+    models: Optional[str] = None,
     return_pipeline: bool = False,
 ) -> Union[
     Dict[str, Any],
@@ -646,14 +701,36 @@ async def compare_models_service(
     # Select candidate models and ranking metric
     # -----------------------------------------------------
 
+    suite_mode = (suite or "standard").strip().lower()
+
     if normalized_task == "classification":
-        candidate_models = CLASSIFICATION_MODELS
+        if suite_mode in {"all", "expanded", "extended", "adaptive"}:
+            candidate_models = dict(EXPANDED_CLASSIFICATION_MODELS)
+            if suite_mode == "adaptive" and len(df_clean) > 5000:
+                candidate_models.pop("SVC", None)
+        else:
+            candidate_models = dict(CLASSIFICATION_MODELS)
         valid_metrics = CLASSIFICATION_RANKING_METRICS
         default_metric = "f1_macro"
     else:
-        candidate_models = REGRESSION_MODELS
+        if suite_mode in {"all", "expanded", "extended", "adaptive"}:
+            candidate_models = dict(EXPANDED_REGRESSION_MODELS)
+            if suite_mode == "adaptive" and len(df_clean) > 5000:
+                candidate_models.pop("SVR", None)
+        else:
+            candidate_models = dict(REGRESSION_MODELS)
         valid_metrics = REGRESSION_RANKING_METRICS
         default_metric = "rmse"
+
+    if models and models.strip():
+        requested = {m.strip().lower() for m in models.split(",") if m.strip()}
+        if "all" not in requested:
+            filtered = {
+                k: v for k, v in candidate_models.items()
+                if k.lower() in requested
+            }
+            if filtered:
+                candidate_models = filtered
 
     ranking_metric = (
         (ranking_metric or default_metric).strip().lower()
@@ -935,8 +1012,16 @@ async def compare_models_service(
             "model": best_model_name,
             "cv_mean": best_cv_mean,
             "cv_std": best_cv_std,
+            "recommendation_reason": (
+                f"Selected as top performing model with CV {ranking_metric.upper()} of {best_cv_mean} (±{best_cv_std}). "
+                f"Demonstrated superior cross-validation stability and holdout generalization."
+            ),
             "holdout_metrics": holdout_metrics,
         },
+        "ranking_explanation": (
+            f"Candidate models were evaluated using {cv_folds}-fold cross-validation on training folds. "
+            f"Rankings are ordered by {ranking_metric.upper()} {'(higher is better)' if higher_is_better else '(lower is better)'}."
+        ),
         "warnings": warnings,
         "data_quality": {
             "initial_shape": (

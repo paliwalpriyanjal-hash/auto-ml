@@ -350,6 +350,191 @@ class TestFeatureEngineering(unittest.TestCase):
         self.assertEqual(tune_res.status_code, 200, tune_res.text)
         self.assertIn("best_params", tune_res.json())
 
+    # ------------------------------------------------------------------
+    # Phase 3 Advanced Feature Engineering Tests
+    # ------------------------------------------------------------------
+
+    def test_13_cyclical_and_temporal_features(self):
+        """Verify cyclical sine/cosine encoding and calendar component extraction."""
+        csv_file = self._make_sample_csv()
+        res = self.client.post(
+            "/features/preview",
+            files={"file": ("cyclical_test.csv", csv_file, "text/csv")},
+            data={
+                "datetime_cols": '["record_date"]',
+                "cyclical_datetime": True,
+            },
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        created = data["created_columns"]
+        self.assertIn("record_date_month_sin", created)
+        self.assertIn("record_date_month_cos", created)
+        self.assertIn("record_date_dayofweek_sin", created)
+        self.assertIn("record_date_is_weekend", created)
+        self.assertIn("record_date_quarter", created)
+
+    def test_14_timeseries_past_only_lags_and_rolling(self):
+        """Verify past-only lag and rolling statistics generation with zero future leakage."""
+        from app.services.feature_service import TabularFeatureEngineer
+        df = pd.DataFrame({
+            "timestamp": pd.date_range("2025-01-01", periods=10, freq="D"),
+            "demand": [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0],
+        })
+        engineer = TabularFeatureEngineer(
+            time_series_col="timestamp",
+            lag_features={"demand": [1, 2]},
+            rolling_features={"demand": [3]},
+        )
+        transformed = engineer.fit_transform(df)
+        self.assertIn("demand_lag_1", transformed.columns)
+        self.assertIn("demand_lag_2", transformed.columns)
+        self.assertIn("demand_rolling_mean_3", transformed.columns)
+
+        # Value at index 2 (t=3, value=30): lag_1 should be 20.0, lag_2 should be 10.0
+        self.assertEqual(float(transformed.loc[2, "demand_lag_1"]), 20.0)
+        self.assertEqual(float(transformed.loc[2, "demand_lag_2"]), 10.0)
+
+    def test_15_yeo_johnson_and_safe_interactions(self):
+        """Verify Yeo-Johnson power transform and zero-division-protected ratio interactions."""
+        csv_file = self._make_sample_csv()
+        res = self.client.post(
+            "/features/preview",
+            files={"file": ("yeo_test.csv", csv_file, "text/csv")},
+            data={
+                "yeo_johnson_cols": '["feature_num1"]',
+                "sqrt_cols": '["feature_nonneg"]',
+                "interaction_pairs": '[["feature_num1", "feature_nonneg", "multiply"], ["feature_num1", "feature_nonneg", "divide"]]',
+            },
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        created = data["created_columns"]
+        self.assertIn("feature_nonneg_sqrt", created)
+        self.assertIn("feature_num1_x_feature_nonneg", created)
+        self.assertIn("feature_num1_div_feature_nonneg", created)
+
+        # Ensure no infinite or NaN values in sample preview
+        for row in data["sample_preview"]:
+            ratio_val = row.get("feature_num1_div_feature_nonneg")
+            self.assertIsNotNone(ratio_val)
+            self.assertTrue(np.isfinite(ratio_val))
+
+    def test_16_text_feature_extraction(self):
+        """Verify lightweight text feature extraction."""
+        from app.services.feature_service import TabularFeatureEngineer
+        df = pd.DataFrame({
+            "notes": ["Customer reported latency issue on checkout", "Short feedback", "", None],
+            "val": [1, 2, 3, 4],
+        })
+        engineer = TabularFeatureEngineer(text_cols=["notes"], drop_raw_text=True)
+        transformed = engineer.fit_transform(df)
+        self.assertIn("notes_char_count", transformed.columns)
+        self.assertIn("notes_word_count", transformed.columns)
+        self.assertIn("notes_is_empty", transformed.columns)
+        self.assertEqual(int(transformed.loc[2, "notes_is_empty"]), 1)
+        self.assertEqual(int(transformed.loc[0, "notes_word_count"]), 6)
+
+    def test_17_mutual_info_and_rfe_selection(self):
+        """Verify Mutual Information and Recursive Feature Elimination selectors."""
+        csv_file = self._make_sample_csv(n_rows=60)
+        # Test mutual_info
+        mi_res = self.client.post(
+            "/features/evaluate",
+            files={"file": ("mi_test.csv", csv_file, "text/csv")},
+            data={
+                "task_type": "classification",
+                "target_column": "target",
+                "model_type": "DecisionTreeClassifier",
+                "selection_method": "mutual_info",
+                "k_best_count": 3,
+                "n_splits": 2,
+            },
+        )
+        self.assertEqual(mi_res.status_code, 200, mi_res.text)
+        self.assertIn("registered_model_id", mi_res.json())
+
+        # Test rfe
+        csv_file.seek(0)
+        rfe_res = self.client.post(
+            "/features/evaluate",
+            files={"file": ("rfe_test.csv", csv_file, "text/csv")},
+            data={
+                "task_type": "classification",
+                "target_column": "target",
+                "model_type": "DecisionTreeClassifier",
+                "selection_method": "rfe",
+                "k_best_count": 3,
+                "n_splits": 2,
+            },
+        )
+        self.assertEqual(rfe_res.status_code, 200, rfe_res.text)
+        self.assertIn("registered_model_id", rfe_res.json())
+
+    def test_18_recommendations_endpoint(self):
+        """Test POST /features/recommendations adaptive strategy selector."""
+        csv_file = self._make_sample_csv()
+        res = self.client.post(
+            "/features/recommendations",
+            files={"file": ("recs_test.csv", csv_file, "text/csv")},
+            data={"target_column": "target"},
+        )
+        self.assertEqual(res.status_code, 200, res.text)
+        data = res.json()
+        self.assertIn("presets", data)
+        self.assertIn("conservative", data["presets"])
+        self.assertIn("balanced", data["presets"])
+        self.assertIn("advanced", data["presets"])
+        self.assertIn("active_profiles", data)
+        self.assertIn("recommendation_explanations", data)
+
+    def test_19_compare_strategies_endpoint(self):
+        """Test POST /features/compare-strategies benchmarking Baseline vs Conservative vs Balanced vs Advanced."""
+        csv_file = self._make_sample_csv(n_rows=70)
+        res = self.client.post(
+            "/features/compare-strategies",
+            files={"file": ("compare_test.csv", csv_file, "text/csv")},
+            data={
+                "task_type": "classification",
+                "target_column": "target",
+                "model_type": "RandomForestClassifier",
+                "ranking_metric": "f1_macro",
+                "n_splits": 2,
+            },
+        )
+        self.assertEqual(res.status_code, 200, res.text)
+        data = res.json()
+        self.assertIn("winning_strategy", data)
+        self.assertIn("comparison_matrix", data)
+        self.assertIn("statistical_verdict", data)
+        self.assertIn("registered_model_id", data)
+        self.assertEqual(len(data["comparison_matrix"]), 4)  # baseline, conservative, balanced, advanced
+
+    def test_20_feature_lineage_endpoint(self):
+        """Test GET /features/lineage/{run_id} retrieval."""
+        csv_file = self._make_sample_csv(n_rows=60)
+        eval_res = self.client.post(
+            "/features/evaluate",
+            files={"file": ("lineage_test.csv", csv_file, "text/csv")},
+            data={
+                "task_type": "classification",
+                "target_column": "target",
+                "model_type": "DecisionTreeClassifier",
+                "datetime_cols": '["record_date"]',
+                "cyclical_datetime": True,
+                "n_splits": 2,
+            },
+        )
+        self.assertEqual(eval_res.status_code, 200)
+        run_id = eval_res.json()["run_id"]
+
+        lin_res = self.client.get(f"/features/lineage/{run_id}")
+        self.assertEqual(lin_res.status_code, 200)
+        data = lin_res.json()
+        self.assertEqual(data["run_id"], run_id)
+        self.assertIn("feature_lineage", data)
+        self.assertTrue(len(data["feature_lineage"]) > 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,9 @@ import AdvancedResult from '../components/Advanced_cleaning/AdvancedResult';
 import PreprocessingOption from '../components/Advanced_cleaning/PreprocessingOption';
 import DataSummary from '../components/Advanced_cleaning/DataSummary';
 import Papa from 'papaparse';
+import PageHeader from '../components/ui/PageHeader';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
 
 export default function AutoMLStudio() {
     const [currentStep, setCurrentStep] = useState(1);
@@ -263,20 +266,17 @@ export default function AutoMLStudio() {
 
     return (
         <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
-            {/* Header with step indicators */}
-            <div className="border-b border-white/[0.08] pb-6">
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#A855F7] bg-[#A855F7]/10 px-2 py-0.5 rounded-full border border-[#A855F7]/20">
+            {/* Universal Page Header */}
+            <PageHeader
+                category="Data Studio"
+                title="Advanced Data Cleaning & Transformation"
+                subtitle="KNN/iterative imputation, IQR outlier treatment, SMOTE class balancing, and TF-IDF extraction powered by AutoVeyra cleaner."
+                badge={
+                    <Badge variant="violet" size="sm">
                         Intelligent Preprocessing
-                    </span>
-                </div>
-                <h1 className="text-3xl font-extrabold text-white tracking-tight">
-                    Advanced Data Cleaning & Transformation
-                </h1>
-                <p className="text-sm text-[#A4A4B8] mt-1">
-                    KNN/iterative imputation, IQR outlier treatment, SMOTE class balancing, and TF-IDF extraction powered by AutoVeyra cleaner.
-                </p>
-            </div>
+                    </Badge>
+                }
+            />
 
             {/* Step progress bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

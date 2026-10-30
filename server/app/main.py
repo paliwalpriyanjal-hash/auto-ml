@@ -31,6 +31,8 @@ from app.routes.feature_routes import router as feature_router
 from app.routes.report_routes import router as report_router
 from app.routes.auth_routes import router as auth_router
 from app.routes.monitoring_routes import router as monitoring_router
+from app.routes.eda_routes import router as eda_router
+from app.routes.assistant_routes import router as assistant_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -154,3 +156,5 @@ app.include_router(feature_router)
 app.include_router(report_router)
 app.include_router(auth_router)
 app.include_router(monitoring_router)
+app.include_router(eda_router)
+app.include_router(assistant_router)

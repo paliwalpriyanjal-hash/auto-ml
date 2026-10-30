@@ -66,9 +66,20 @@ class AdvancedDataCleaner:
             # Final cleanup
             self._remove_duplicates()
             
+            def _py_native(val):
+                if isinstance(val, dict):
+                    return {str(k): _py_native(v) for k, v in val.items()}
+                if isinstance(val, (list, tuple)):
+                    return [_py_native(v) for v in val]
+                if isinstance(val, (np.integer, int)):
+                    return int(val)
+                if isinstance(val, (np.floating, float)):
+                    return float(val)
+                return val
+
             return {
                 'csv': self.df.to_csv(index=False),
-                'stats': self.stats
+                'stats': _py_native(self.stats)
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))

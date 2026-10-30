@@ -286,7 +286,10 @@ class TestE2EPilotReadiness(unittest.TestCase):
 
     def test_07_isolated_backup_and_restoration(self):
         """Verify zero-downtime backup creation and restoration in an isolated sandbox directory."""
-        from server.scripts.backup_databases import backup_databases
+        try:
+            from scripts.backup_databases import backup_databases
+        except ImportError:
+            from server.scripts.backup_databases import backup_databases
 
         temp_dir = tempfile.mkdtemp()
         try:

@@ -3,14 +3,23 @@ import Papa from "papaparse";
 import Result from "../components/ResultDisplay";
 import Model from "../components/ModelSelection";
 import Preprocess from "../components/PreprocessingOptions";
+import { getApiBase } from "../utils/api";
 import {
   FiUpload,
   FiSettings,
   FiCpu,
   FiBarChart2,
   FiCheckCircle,
-  FiAlertCircle
+  FiAlertCircle,
+  FiSliders,
+  FiZap,
+  FiActivity,
+  FiHelpCircle
 } from "react-icons/fi";
+import PageHeader from "../components/ui/PageHeader";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
 
 function AutoML() {
   const [submit, setSubmit] = useState(false);
@@ -22,13 +31,60 @@ function AutoML() {
   const [taskType, setTaskType] = useState("regression");
   const [targetColumn, setTargetColumn] = useState("");
 
-  const [missingStrategy, setMissingStrategy] = useState("drop");
-  const [encodingStrategy, setEncodingStrategy] = useState("label");
+  const [autoMode, setAutoMode] = useState(true);
+  const [intelligence, setIntelligence] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  const [missingStrategy, setMissingStrategy] = useState("median");
+  const [encodingStrategy, setEncodingStrategy] = useState("onehot");
   const [scaler, setScaler] = useState("standard");
   const [splitRatio, setSplitRatio] = useState("0.8");
-  const [model, setModel] = useState("LinearRegression");
+  const [model, setModel] = useState("RandomForestClassifier");
 
   const [error, setError] = useState("");
+
+  const fetchDatasetIntelligence = async (file, currentTarget) => {
+    try {
+      setAnalyzing(true);
+      const apiBase = getApiBase();
+      const fd = new FormData();
+      fd.append("file", file);
+      if (currentTarget) {
+        fd.append("target_column", currentTarget);
+      }
+
+      const res = await fetch(`${apiBase}/train/analyze`, {
+        method: "POST",
+        body: fd,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setIntelligence(data);
+
+        // Intelligently adapt defaults based on dataset analysis
+        if (data?.target_analysis?.inferred_task) {
+          const task = data.target_analysis.inferred_task === "regression" ? "regression" : "classification";
+          setTaskType(task);
+          if (task === "classification") {
+            setModel("RandomForestClassifier");
+            setEncodingStrategy("onehot");
+          } else {
+            setModel("RandomForest");
+            setEncodingStrategy("label");
+          }
+        }
+
+        if (data?.target_analysis?.inferred_target && !currentTarget) {
+          setTargetColumn(data.target_analysis.inferred_target);
+        }
+      }
+    } catch (err) {
+      console.warn("Dataset intelligence analysis note:", err);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const handleTaskTypeChange = (newTask) => {
     setTaskType(newTask);
@@ -38,7 +94,7 @@ function AutoML() {
       setModel("RandomForestClassifier");
       setEncodingStrategy("onehot");
     } else {
-      setModel("LinearRegression");
+      setModel("RandomForest");
       setEncodingStrategy("label");
     }
   };
@@ -53,6 +109,7 @@ function AutoML() {
     setPreviewData([]);
     setColumns([]);
     setTargetColumn("");
+    setIntelligence(null);
     setActiveStep(1);
 
     if (!file.name.toLowerCase().endsWith(".csv")) {
@@ -73,13 +130,24 @@ function AutoML() {
           return;
         }
 
+        const initialTarget = fields[fields.length - 1];
         setCsvFile(file);
         setColumns(fields);
         setPreviewData(data.slice(0, 5));
-        setTargetColumn(fields[fields.length - 1]);
+        setTargetColumn(initialTarget);
         setActiveStep(2);
+
+        // Automatically trigger intelligent dataset analysis
+        fetchDatasetIntelligence(file, initialTarget);
       },
     });
+  };
+
+  const handleTargetChange = (newTarget) => {
+    setTargetColumn(newTarget);
+    if (csvFile && newTarget) {
+      fetchDatasetIntelligence(csvFile, newTarget);
+    }
   };
 
   const handleSubmit = () => {
@@ -88,8 +156,8 @@ function AutoML() {
       return;
     }
 
-    if (taskType === "classification" && !targetColumn) {
-      setError("Please choose a target column for classification.");
+    if (!targetColumn) {
+      setError("Please choose a target column.");
       return;
     }
 
@@ -105,19 +173,17 @@ function AutoML() {
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
-      
-      {/* Title */}
-      <div className="border-b border-white/[0.08] pb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8265FF] bg-[#8265FF]/10 px-2 py-0.5 rounded-full border border-[#8265FF]/20">
-            Pipeline Configuration
-          </span>
-        </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Dedicated Model Training</h1>
-        <p className="text-sm text-[#A4A4B8] mt-1">
-          Train a specific algorithm with deterministic preprocessing, evaluate holdout metrics, and auto-register the fitted pipeline.
-        </p>
-      </div>
+      {/* Universal Page Header */}
+      <PageHeader
+        category="Machine Learning"
+        title="AutoML Pipeline Training"
+        subtitle="Train a specific algorithm with deterministic preprocessing, evaluate holdout metrics, and auto-register the fitted pipeline."
+        badge={
+          <Badge variant="violet" size="sm">
+            Dataset-Adaptive Architecture
+          </Badge>
+        }
+      />
 
       {/* Progress Steps Header */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -188,12 +254,19 @@ function AutoML() {
         </section>
       )}
 
-      {/* Step 2: Task Selection */}
+      {/* Step 2: Task & Target Selection + Pre-Training Intelligence */}
       {!submit && csvFile && (
-        <section className="bg-[#111126] p-6 rounded-2xl border border-white/[0.08] shadow-xl space-y-4">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <FiSettings className="text-[#A855F7]" /> Task & Target Configuration
-          </h3>
+        <section className="bg-[#111126] p-6 rounded-2xl border border-white/[0.08] shadow-xl space-y-5">
+          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <FiSettings className="text-[#A855F7]" /> Task & Target Configuration
+            </h3>
+            {analyzing && (
+              <span className="text-xs text-[#8265FF] flex items-center gap-1.5 animate-pulse">
+                <FiActivity /> Analyzing dataset intelligence...
+              </span>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -205,8 +278,8 @@ function AutoML() {
                 onChange={(e) => handleTaskTypeChange(e.target.value)}
                 className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
               >
-                <option value="regression">Regression (Predict numbers)</option>
-                <option value="classification">Classification (Predict classes)</option>
+                <option value="regression">Regression (Continuous values)</option>
+                <option value="classification">Classification (Discrete labels)</option>
               </select>
             </div>
 
@@ -216,7 +289,7 @@ function AutoML() {
               </label>
               <select
                 value={targetColumn}
-                onChange={(e) => setTargetColumn(e.target.value)}
+                onChange={(e) => handleTargetChange(e.target.value)}
                 className="w-full bg-[#171630] border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8265FF]"
               >
                 <option value="">Select target column...</option>
@@ -226,34 +299,135 @@ function AutoML() {
               </select>
             </div>
           </div>
+
+          {/* Dataset Intelligence Pre-training Report */}
+          {intelligence && (
+            <div className="bg-[#171630]/80 p-4 rounded-xl border border-[#8265FF]/20 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] pb-2">
+                <span className="text-xs font-semibold text-white flex items-center gap-2">
+                  <FiActivity className="text-[#8265FF]" /> Dataset Pre-Training Intelligence
+                </span>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <span className="px-2 py-0.5 rounded-full bg-[#8265FF]/20 text-[#8265FF] border border-[#8265FF]/30 font-medium">
+                    {intelligence.dimensions?.rows} rows × {intelligence.dimensions?.columns} cols
+                  </span>
+                  {intelligence.target_analysis?.imbalance_severity && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full font-medium border ${
+                        intelligence.target_analysis.imbalance_severity === "severe"
+                          ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                          : intelligence.target_analysis.imbalance_severity === "moderate"
+                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                      }`}
+                    >
+                      Imbalance: {intelligence.target_analysis.imbalance_severity} ({intelligence.target_analysis.imbalance_ratio}:1)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {intelligence.recommendations && intelligence.recommendations.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold text-[#8265FF] uppercase tracking-wider">
+                    Automated Pre-Training Recommendations:
+                  </p>
+                  <ul className="list-disc list-inside text-xs text-[#A4A4B8] space-y-0.5">
+                    {intelligence.recommendations.slice(0, 3).map((rec, i) => (
+                      <li key={i}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 
-      {/* Step 3: Model & Preprocessing Options */}
+      {/* Mode Selector: Auto vs Advanced */}
       {!submit && csvFile && (
-        <>
-          <Model model={model} setModel={setModel} taskType={taskType} />
-          <Preprocess
-            missingStrategy={missingStrategy}
-            setMissingStrategy={setMissingStrategy}
-            encodingStrategy={encodingStrategy}
-            setEncodingStrategy={setEncodingStrategy}
-            scaler={scaler}
-            setScaler={setScaler}
-            splitRatio={splitRatio}
-            setSplitRatio={setSplitRatio}
-          />
+        <section className="bg-[#111126] p-6 rounded-2xl border border-white/[0.08] shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.06] pb-4">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FiSliders className="text-[#8265FF]" /> Training Mode
+              </h3>
+              <p className="text-xs text-[#A4A4B8]">
+                Choose between dataset-adaptive automation and granular engineer control.
+              </p>
+            </div>
+            <div className="inline-flex rounded-xl bg-[#171630] p-1 border border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => setAutoMode(true)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  autoMode
+                    ? "bg-[#8265FF] text-white shadow-md shadow-[#8265FF]/30"
+                    : "text-[#A4A4B8] hover:text-white"
+                }`}
+              >
+                <FiZap /> Auto Mode (Recommended)
+              </button>
+              <button
+                type="button"
+                onClick={() => setAutoMode(false)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition ${
+                  !autoMode
+                    ? "bg-[#8265FF] text-white shadow-md shadow-[#8265FF]/30"
+                    : "text-[#A4A4B8] hover:text-white"
+                }`}
+              >
+                <FiSliders /> Advanced Mode
+              </button>
+            </div>
+          </div>
 
-          <div className="flex justify-end">
+          {autoMode ? (
+            <div className="bg-[#171630] border border-white/[0.06] p-5 rounded-xl space-y-3">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold">
+                <FiCheckCircle /> Intelligent Dataset-Adaptive Presets Active
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-[#A4A4B8]">
+                <div className="bg-[#111126] p-3 rounded-lg border border-white/[0.04]">
+                  <span className="text-[#8265FF] font-semibold block mb-1">Recommended Estimator</span>
+                  <span className="text-white font-mono">{model}</span>
+                </div>
+                <div className="bg-[#111126] p-3 rounded-lg border border-white/[0.04]">
+                  <span className="text-[#8265FF] font-semibold block mb-1">Preprocessing Pipeline</span>
+                  <span className="text-white">Leak-free Median Imputation + {scaler} Scaler</span>
+                </div>
+                <div className="bg-[#111126] p-3 rounded-lg border border-white/[0.04]">
+                  <span className="text-[#8265FF] font-semibold block mb-1">Evaluation Methodology</span>
+                  <span className="text-white">5-Fold Stratified CV + 20% Untouched Holdout</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-2">
+              <Model model={model} setModel={setModel} taskType={taskType} />
+              <Preprocess
+                missingStrategy={missingStrategy}
+                setMissingStrategy={setMissingStrategy}
+                encodingStrategy={encodingStrategy}
+                setEncodingStrategy={setEncodingStrategy}
+                scaler={scaler}
+                setScaler={setScaler}
+                splitRatio={splitRatio}
+                setSplitRatio={setSplitRatio}
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
             <button
               onClick={handleSubmit}
-              className="px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#8265FF] to-[#A855F7] hover:from-[#7152f8] hover:to-[#9333ea] text-white shadow-xl shadow-[#8265FF]/25 flex items-center gap-2 transition-all"
+              className="px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#8265FF] to-[#A855F7] hover:from-[#7152f8] hover:to-[#9333ea] text-white shadow-xl shadow-[#8265FF]/25 flex items-center gap-2 transition-all cursor-pointer"
             >
               <FiBarChart2 />
-              Start Training Pipeline
+              Train Model & Verify Generalization
             </button>
           </div>
-        </>
+        </section>
       )}
 
       {/* Error state */}

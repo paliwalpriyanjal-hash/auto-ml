@@ -328,17 +328,102 @@ function Result({
         </div>
 
         {registeredModel && (
-          <div className="flex items-center gap-2 bg-[#8265FF]/10 border border-[#8265FF]/30 px-4 py-2.5 rounded-xl">
-            <FiCheckCircle className="text-[#8265FF] w-4 h-4" />
-            <div className="text-left text-xs">
-              <span className="font-semibold text-white block">Registered Model #{registeredModel.id}</span>
-              <Link to={`/predict?model=${registeredModel.id}`} className="text-[#8265FF] hover:underline font-medium">
-                Test Inference Online →
-              </Link>
+          <div className="flex flex-wrap items-center gap-2 bg-[#8265FF]/10 border border-[#8265FF]/30 p-2.5 rounded-xl">
+            <FiCheckCircle className="text-[#8265FF] w-4 h-4 shrink-0" />
+            <div className="text-left text-xs mr-2">
+              <span className="font-semibold text-white block">Registered #{registeredModel.id}</span>
             </div>
+            <Link
+              to={`/predict?model=${registeredModel.id}`}
+              className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[#8265FF]/20 border border-[#8265FF]/40 text-[#8265FF] hover:bg-[#8265FF]/30 transition"
+            >
+              Predict Online →
+            </Link>
+            <Link
+              to={`/explain?model=${registeredModel.id}`}
+              className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 transition"
+            >
+              Explainability →
+            </Link>
+            <Link
+              to={`/reports?model=${registeredModel.id}`}
+              className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30 transition"
+            >
+              Report Card →
+            </Link>
           </div>
         )}
       </header>
+
+      {/* Validation & Generalization Hierarchy */}
+      <div className="p-6 pt-0 space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A4A4B8] flex items-center gap-2">
+            <FiTrendingUp className="text-[#8265FF]" /> Validation & Generalization Hierarchy
+          </h3>
+          {response.overfitting_gap !== undefined && (
+            <span
+              className={`text-xs px-2.5 py-0.5 rounded-full border font-mono ${
+                Math.abs(response.overfitting_gap) > 0.15
+                  ? "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                  : Math.abs(response.overfitting_gap) > 0.08
+                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                  : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+              }`}
+            >
+              Overfitting Gap: {formatPercent(response.overfitting_gap)}
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-[#171630] border border-white/[0.08] p-4 rounded-xl">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#A4A4B8] block mb-1">
+              1. Training Fit Metric
+            </span>
+            <p className="text-xl font-bold font-mono text-white">
+              {isClassification
+                ? formatPercent(response.training_metrics?.accuracy)
+                : formatNumber(response.training_metrics?.r2)}
+            </p>
+            <p className="text-[11px] text-[#A4A4B8] mt-1">
+              {isClassification ? "Accuracy on Training Split" : "R² Score on Training Split"}
+            </p>
+          </div>
+
+          <div className="bg-[#171630] border border-[#8265FF]/40 p-4 rounded-xl shadow-lg shadow-[#8265FF]/5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8265FF] block mb-1">
+              2. K-Fold Cross-Validation
+            </span>
+            <p className="text-xl font-bold font-mono text-white">
+              {isClassification
+                ? response.cv_metrics?.accuracy_mean !== undefined
+                  ? `${formatPercent(response.cv_metrics.accuracy_mean)} ± ${formatPercent(response.cv_metrics.accuracy_std)}`
+                  : "N/A"
+                : response.cv_metrics?.r2_mean !== undefined
+                ? `${formatNumber(response.cv_metrics.r2_mean)} ± ${formatNumber(response.cv_metrics.r2_std)}`
+                : "N/A"}
+            </p>
+            <p className="text-[11px] text-[#A4A4B8] mt-1">
+              Mean CV Score ({response.cv_metrics?.cv_folds || 5} Folds on Training Data)
+            </p>
+          </div>
+
+          <div className="bg-[#171630] border border-emerald-500/40 p-4 rounded-xl">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400 block mb-1">
+              3. Untouched Holdout Test
+            </span>
+            <p className="text-xl font-bold font-mono text-white">
+              {isClassification
+                ? formatPercent(metrics.accuracy)
+                : formatNumber(metrics.r2)}
+            </p>
+            <p className="text-[11px] text-[#A4A4B8] mt-1">
+              Final Unseen Split ({response.data_quality?.testing_samples || 0} held-out samples)
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Metrics Grid */}
       <div className="p-6 pt-0 space-y-4">
@@ -436,6 +521,62 @@ function Result({
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Diagnostics & Generalization Assessment */}
+      {response.diagnostics && (
+        <div className="p-6 border-t border-white/[0.06] space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300 flex items-center gap-2">
+            <FiAlertTriangle className="text-amber-400" /> Model Intelligence & Failure Diagnostics
+          </h3>
+          <div className="bg-[#171630] border border-white/[0.08] p-4 rounded-xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.06] pb-2">
+              <span className="text-xs font-semibold text-white">
+                Generalization Status:{" "}
+                <span className="capitalize text-emerald-400 font-mono">
+                  {response.diagnostics.status || "Healthy"}
+                </span>
+              </span>
+              <span className="text-xs text-[#A4A4B8]">
+                {response.diagnostics.summary}
+              </span>
+            </div>
+
+            {response.imbalance_info && (
+              <div className="text-xs bg-[#111126] p-3 rounded-lg border border-white/[0.06] flex items-center justify-between">
+                <span className="text-[#A4A4B8]">Class Imbalance Ratio:</span>
+                <span className="font-mono text-white font-bold">
+                  {response.imbalance_info.imbalance_ratio}:1 ({response.imbalance_info.imbalance_severity})
+                </span>
+                <span className="text-emerald-400 text-[11px]">
+                  Applied: {response.imbalance_info.applied_strategy}
+                </span>
+              </div>
+            )}
+
+            {Array.isArray(response.diagnostics.findings) && response.diagnostics.findings.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">Diagnostic Findings:</p>
+                <ul className="list-disc list-inside text-xs text-[#A4A4B8] space-y-0.5">
+                  {response.diagnostics.findings.map((f, i) => (
+                    <li key={i}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {Array.isArray(response.diagnostics.recommendations) && response.diagnostics.recommendations.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8265FF]">Actionable Recommendations:</p>
+                <ul className="list-disc list-inside text-xs text-[#F7F7FC] space-y-0.5">
+                  {response.diagnostics.recommendations.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       )}
